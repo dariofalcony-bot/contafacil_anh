@@ -1519,20 +1519,22 @@ function facDzDp(e){e.preventDefault();facDzLv();facCargarArchivos(e.dataTransfe
 async function facCargarArchivos(files){
   if(!files||!files.length)return;
   const listEl=document.getElementById('fac-list');
-  listEl.style.display='flex';
-  // NO limpiar facArchivos — acumular para permitir múltiples cargues
-  // (se limpia solo con el botón reset o al iniciar módulo)
-  const nombresExistentes=new Set(facArchivos.map(x=>x.nombre));
+  listEl.style.display='flex';listEl.innerHTML='';
+  // Cada cargue reemplaza el lote — deduplicación solo dentro del mismo cargue
+  facArchivos=[];
+  const nombresEnEsteCargue=new Set();
+  let dupsEnCargue=0;
   for(const file of files){
     const ext=file.name.split('.').pop().toLowerCase();
     const item=document.createElement('div');item.className='fac-item';
     if(ext==='xml'){
-      if(nombresExistentes.has(file.name)){
+      if(nombresEnEsteCargue.has(file.name)){
+        dupsEnCargue++;
         item.innerHTML='<span style="font-size:16px">⚠️</span><span class="fac-item-name">'+file.name+'</span><span class="fac-item-status status-warn">Duplicado — omitido</span>';
       }else{
         const txt=await file.text();
         facArchivos.push({nombre:file.name,xml:txt});
-        nombresExistentes.add(file.name);
+        nombresEnEsteCargue.add(file.name);
         item.innerHTML='<span style="font-size:16px">📄</span><span class="fac-item-name">'+file.name+'</span><span class="fac-item-status status-ok">XML ✓</span>';
       }
     }else if(ext==='zip'){
@@ -1540,10 +1542,11 @@ async function facCargarArchivos(files){
         const xmls=await extraerXMLsDeZip(await file.arrayBuffer());
         let nuevos=0,dups=0;
         for(const x of xmls){
-          if(nombresExistentes.has(x.nombre)){dups++;}
-          else{facArchivos.push(x);nombresExistentes.add(x.nombre);nuevos++;}
+          if(nombresEnEsteCargue.has(x.nombre)){dups++;}
+          else{facArchivos.push(x);nombresEnEsteCargue.add(x.nombre);nuevos++;}
         }
-        const dupTxt=dups>0?` · <b>${dups} dup. omitido(s)</b>`:'';
+        dupsEnCargue+=dups;
+        const dupTxt=dups>0?' · <b>'+dups+' dup. omitido(s)</b>':'';
         item.innerHTML='<span style="font-size:16px">📦</span><span class="fac-item-name">'+file.name+'</span><span class="fac-item-status '+(dups>0?'status-warn':'status-ok')+'">'+nuevos+' XML(s) ✓'+dupTxt+'</span>';
       }catch(e){
         item.innerHTML='<span style="font-size:16px">📦</span><span class="fac-item-name">'+file.name+'</span><span class="fac-item-status status-err">Error: '+e.message+'</span>';
@@ -1553,9 +1556,16 @@ async function facCargarArchivos(files){
     }
     listEl.appendChild(item);
   }
-  // Mostrar conteo total acumulado
+  // Mostrar aviso si hubo duplicados en este cargue
+  const warnEl=document.getElementById('fac-warn');
+  if(dupsEnCargue>0){
+    warnEl.innerHTML='⚠️ <b>'+dupsEnCargue+' archivo(s) duplicado(s)</b> omitidos en este cargue (mismo nombre de XML).';
+    warnEl.style.display='block';
+  }else{
+    warnEl.style.display='none';
+  }
   const totalEl=document.getElementById('fac-total-acumulado');
-  if(totalEl) totalEl.textContent=facArchivos.length+' XML(s) en lote';
+  if(totalEl) totalEl.textContent='📂 Lote: '+facArchivos.length+' XML(s)';
   facUpdateBtn();
 }
 

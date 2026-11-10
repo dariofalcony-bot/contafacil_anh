@@ -7,9 +7,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:#f4f6fb;color:#1a2236;min-height:100vh;padding:28px 16px}
-.wrap{max-width:1150px;margin:0 auto}
-h1{font-size:22px;font-weight:700;color:#1a2236;letter-spacing:-.3px}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f4f6fb;color:#1a2236;min-height:100vh;padding:28px 32px}
+.wrap{max-width:1600px;margin:0 auto}
+h1{font-size:24px;font-weight:700;color:#1a2236;letter-spacing:-.3px}
 .sub{color:#7a8aaa;font-size:12px;margin-top:3px}
 .header{display:flex;align-items:center;gap:14px;margin-bottom:24px}
 .logo{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -79,16 +79,18 @@ tr.gmf-row td{background:#fff7ed}
 .status-ok{background:#dcfce7;color:#166534}
 .status-warn{background:#fef3c7;color:#92400e}
 .status-err{background:#fef2f2;color:#991b1b}
-.review-table-wrap{overflow-x:auto;max-height:500px;overflow-y:auto;margin-bottom:14px}
-.review-table{width:100%;border-collapse:collapse;font-size:12px}
-.review-table th{padding:8px 10px;background:#f4f6fb;border-bottom:2px solid #dde3ef;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:#7a8aaa;white-space:nowrap;position:sticky;top:0;z-index:1}
-.review-table td{padding:7px 10px;border-bottom:1px solid #eef1f7;vertical-align:middle}
+.review-table-wrap{overflow-x:auto;margin-bottom:14px}
+.review-table{width:100%;border-collapse:collapse;font-size:13px}
+.review-table th{padding:10px 14px;background:#f4f6fb;border-bottom:2px solid #dde3ef;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:#7a8aaa;white-space:nowrap;position:sticky;top:0;z-index:1}
+.review-table td{padding:10px 14px;border-bottom:1px solid #eef1f7;vertical-align:middle}
 .review-table tr:hover td{background:#f8fafd}
-.review-table select{padding:4px 8px;border:1.5px solid #dde3ef;border-radius:6px;font-size:11px;background:#fff;cursor:pointer;min-width:200px}
+.review-table select{padding:5px 10px;border:1.5px solid #dde3ef;border-radius:6px;font-size:12px;background:#fff;cursor:pointer;min-width:220px}
 .review-table select.warn{border-color:#f59e0b;background:#fffbeb}
-.fac-group-header{background:#eff6ff;font-weight:700;font-size:11px;color:#1e40af}
-.fac-group-header td{padding:6px 10px;border-bottom:1px solid #bfdbfe}
-.total-row td{font-weight:700;background:#f8fafd;font-size:12px}
+/* Cabecera de cada factura — separación visual clara entre comprobantes */
+.fac-group-header{background:#1e40af;font-weight:700;font-size:13px;color:#fff}
+.fac-group-header td{padding:10px 14px;border-bottom:2px solid #1e3a8a;border-top:6px solid #f4f6fb}
+.review-table tbody tr:first-child .fac-group-header td{border-top:none}
+.total-row td{font-weight:700;background:#f0fdf4;font-size:13px;border-top:2px solid #bbf7d0;border-bottom:3px solid #dde3ef}
 .btn-primary{padding:10px 22px;border:none;border-radius:8px;background:#2563eb;color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .2s}
 .btn-primary:hover{opacity:.88}.btn-primary:disabled{opacity:.4;cursor:not-allowed}
 </style>
@@ -1654,9 +1656,10 @@ function facProcesar(){
   for(const arch of facArchivos){
     try{
       const fac=parsearXMLFac(arch.xml);
-      // Deduplicación por número de factura
-      if(numsFac.has(fac.numero)){duplicados.push(fac.numero);continue;}
-      numsFac.add(fac.numero);
+      // Deduplicación por número de factura (campo correcto: numFacRaw)
+      const keyFac=fac.numFacRaw||arch.nombre;
+      if(numsFac.has(keyFac)){duplicados.push(keyFac);continue;}
+      numsFac.add(keyFac);
       fac.consecutivoSiigo=consec+facFacturas.length;
       fac.ccKey=detectarCCdesdNota(fac.nota)||null;
       fac.centroInfo=fac.ccKey?FAC_CENTROS[fac.ccKey]:null;
@@ -1852,14 +1855,37 @@ function renderFacReview(){
   const conNomErr=facFacturas.filter(f=>f.alertaNombre).length;
 
   document.getElementById('fac-review-summary').innerHTML=
-    '<h3>📊 '+facFacturas.length+' factura(s) procesada(s)</h3>'+
-    '<div class="summary-row"><span>Total a contabilizar</span><span class="green"><strong>'+fmt(totalPagar)+'</strong></span></div>'+
-    '<div class="summary-row"><span>Primer consecutivo Siigo</span><span><strong>P-'+document.getElementById('fac-consec').value+'</strong></span></div>'+
-    (sinCC?'<div class="summary-row"><span style="color:#d63b3b">⚠️ Facturas sin contrato detectado</span><span class="red"><strong>'+sinCC+' — asigna CC en la tabla</strong></span></div>':'')+
-    (conDuda?'<div class="summary-row"><span style="color:#92400e">⚠️ Ítems sin clasificar</span><span class="amber"><strong>Revisa filas amarillas</strong></span></div>':'')+
-    (conAlerta?'<div class="summary-row"><span style="color:#d63b3b">⚠️ Diferencias en IVA</span><span class="red"><strong>Verifica montos</strong></span></div>':'')+
-    (conNitErr?'<div class="summary-row"><span style="color:#fff;background:#d63b3b;padding:2px 8px;border-radius:6px;font-weight:700">⛔ NIT receptor incorrecto</span><span class="red"><strong>'+conNitErr+' factura(s) — revisar y eliminar</strong></span></div>':'')+
-    (conNomErr?'<div class="summary-row"><span style="color:#92400e">⚠️ Nombre receptor no reconocido</span><span class="amber"><strong>'+conNomErr+' factura(s) — verificar</strong></span></div>':'');
+    // ── Fila de tarjetas de métricas ──
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:14px">'+
+      '<div style="background:#fff;border:2px solid #dde3ef;border-radius:14px;padding:18px 22px">'+
+        '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:#7a8aaa;margin-bottom:6px">Facturas procesadas</div>'+
+        '<div style="font-size:32px;font-weight:800;color:#1a2236;line-height:1">'+facFacturas.length+'</div>'+
+      '</div>'+
+      '<div style="background:#fff;border:2px solid #dde3ef;border-radius:14px;padding:18px 22px">'+
+        '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:#7a8aaa;margin-bottom:6px">Total a contabilizar</div>'+
+        '<div style="font-size:26px;font-weight:800;color:#0d9e6e;line-height:1">'+fmt(totalPagar)+'</div>'+
+      '</div>'+
+      '<div style="background:#fff;border:2px solid #dde3ef;border-radius:14px;padding:18px 22px">'+
+        '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:#7a8aaa;margin-bottom:6px">Primer consecutivo Siigo</div>'+
+        '<div style="font-size:28px;font-weight:800;color:#2563eb;line-height:1">P-'+document.getElementById('fac-consec').value+'</div>'+
+      '</div>'+
+      (sinCC?
+        '<div style="background:#fef2f2;border:2px solid #fecaca;border-radius:14px;padding:18px 22px">'+
+          '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:#991b1b;margin-bottom:6px">⚠️ Sin contrato</div>'+
+          '<div style="font-size:28px;font-weight:800;color:#d63b3b;line-height:1">'+sinCC+'</div>'+
+          '<div style="font-size:11px;color:#991b1b;margin-top:4px">Asigna CC en la tabla</div>'+
+        '</div>':'')+
+      (conNitErr?
+        '<div style="background:#fef2f2;border:2px solid #fecaca;border-radius:14px;padding:18px 22px">'+
+          '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:#991b1b;margin-bottom:6px">⛔ NIT incorrecto</div>'+
+          '<div style="font-size:28px;font-weight:800;color:#d63b3b;line-height:1">'+conNitErr+'</div>'+
+          '<div style="font-size:11px;color:#991b1b;margin-top:4px">Revisar y eliminar</div>'+
+        '</div>':'')+
+    '</div>'+
+    // ── Alertas adicionales en línea ──
+    (conDuda?'<div class="info-amber" style="margin-bottom:8px">⚠️ <b>Ítems sin clasificar</b> — revisa filas en amarillo en la tabla.</div>':'')+
+    (conAlerta?'<div class="err" style="display:block;margin-bottom:8px">⚠️ <b>Diferencias en IVA</b> — verifica los montos antes de exportar.</div>':'')+
+    (conNomErr?'<div class="info-amber" style="margin-bottom:8px">⚠️ <b>'+conNomErr+' factura(s)</b> con nombre de receptor no reconocido — verificar.</div>':'');
 
   const tbody=document.getElementById('fac-review-body');
   let html='';

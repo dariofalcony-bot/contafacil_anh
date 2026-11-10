@@ -1,0 +1,2034 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contafacil ANH - FNHN</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f4f6fb;color:#1a2236;min-height:100vh;padding:28px 16px}
+.wrap{max-width:1150px;margin:0 auto}
+h1{font-size:22px;font-weight:700;color:#1a2236;letter-spacing:-.3px}
+.sub{color:#7a8aaa;font-size:12px;margin-top:3px}
+.header{display:flex;align-items:center;gap:14px;margin-bottom:24px}
+.logo{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.main-tabs{display:flex;gap:4px;margin-bottom:24px;border-bottom:2px solid #dde3ef}
+.main-tab{padding:10px 22px;border:none;background:transparent;font-size:13px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;color:#7a8aaa;transition:all .15s;border-radius:8px 8px 0 0}
+.main-tab.on{border-bottom-color:#2563eb;color:#2563eb;background:#eff6ff}
+.main-tab:hover:not(.on){color:#1a2236;background:#f0f2f8}
+.section{display:none}.section.on{display:block}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.dz{border:2px dashed #c8d0e0;border-radius:14px;padding:24px 18px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;background:#fff;transition:all .2s;text-align:center}
+.dz:hover,.dz.drag{border-color:#0d9e6e;background:#f0faf6}.dz.done{border-color:#0d9e6e;background:#f0faf6}
+.dz input{display:none}.dz-icon{font-size:28px}
+.dz-name{font-size:13px;font-weight:600;color:#1a2236}.dz-hint{font-size:11px;color:#7a8aaa;margin-top:2px}
+.info{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:11px 15px;font-size:11px;color:#1e40af;line-height:1.8;margin-bottom:14px}
+.info-amber{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:11px 15px;font-size:11px;color:#92400e;line-height:1.8;margin-bottom:14px}
+.err{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:11px 15px;font-size:12px;color:#991b1b;margin-bottom:14px;display:none}
+.ok{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:11px 15px;font-size:12px;color:#166534;margin-bottom:14px;display:none}
+.btn-run{width:100%;padding:13px;border:none;border-radius:10px;background:linear-gradient(135deg,#0d9e6e,#2563eb);color:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .2s;margin-bottom:20px}
+.btn-run:disabled{opacity:.35;cursor:not-allowed}.btn-run:hover:not(:disabled){opacity:.9}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.stat{background:#fff;border:1.5px solid #dde3ef;border-radius:14px;padding:15px 18px}
+.stat-label{font-size:10px;color:#7a8aaa;text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px}
+.stat-val{font-size:22px;font-weight:700}.stat-sub{font-size:11px;color:#7a8aaa;margin-top:4px}
+.toolbar{display:flex;justify-content:flex-end;gap:10px;margin-bottom:10px;align-items:center;flex-wrap:wrap}
+.btn-sm{padding:7px 15px;border-radius:8px;border:1.5px solid #dde3ef;background:#fff;color:#1a2236;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block;transition:background .15s}
+.btn-sm:hover{background:#f0f2f8}
+.btn-dl{background:#0d9e6e;color:#fff !important;border-color:#0d9e6e}.btn-dl:hover{background:#0b8a60}
+.panel{background:#fff;border:1.5px solid #dde3ef;border-radius:14px;overflow:hidden;margin-bottom:20px}
+.tabs{display:flex;border-bottom:1.5px solid #dde3ef;background:#f4f6fb;overflow-x:auto}
+.tab{padding:10px 15px;border:none;background:transparent;font-size:12px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:#7a8aaa;white-space:nowrap;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.tab.on{border-bottom-color:#0d9e6e;color:#1a2236}
+.chip{border-radius:20px;padding:2px 9px;font-size:10px;font-weight:700}
+.tbl-wrap{overflow-x:auto;max-height:420px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{padding:9px 12px;text-align:left;font-size:10px;color:#7a8aaa;text-transform:uppercase;letter-spacing:.7px;border-bottom:2px solid #dde3ef;background:#f4f6fb;white-space:nowrap;font-weight:600;position:sticky;top:0;z-index:1}
+td{padding:8px 12px;border-bottom:1px solid #eef1f7;color:#1a2236;vertical-align:top}
+tr:hover td{background:#f8fafd}
+.empty{padding:40px;text-align:center;color:#7a8aaa;font-size:13px;font-style:italic}
+.green{color:#0d9e6e;font-weight:600}.red{color:#d63b3b;font-weight:600}
+.amber{color:#c97d00;font-weight:600}.muted{color:#7a8aaa;font-size:11px}.ellipsis{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Módulo contable */
+.config-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-label{font-size:11px;font-weight:600;color:#7a8aaa;text-transform:uppercase;letter-spacing:.5px}
+.form-input{padding:9px 12px;border:1.5px solid #dde3ef;border-radius:8px;font-size:13px;color:#1a2236;font-family:inherit;background:#fff;transition:border-color .15s}
+.form-input:focus{outline:none;border-color:#2563eb}
+.form-input[readonly]{background:#f8fafd;color:#7a8aaa}
+.form-select{padding:9px 12px;border:1.5px solid #dde3ef;border-radius:8px;font-size:13px;color:#1a2236;font-family:inherit;background:#fff;cursor:pointer}
+.form-select:focus{outline:none;border-color:#2563eb}
+.summary-card{background:#f8fafd;border:1.5px solid #dde3ef;border-radius:12px;padding:16px 20px;margin-bottom:16px}
+.summary-card h3{font-size:13px;font-weight:700;color:#1a2236;margin-bottom:10px}
+.summary-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #eef1f7;font-size:12px}
+.summary-row:last-child{border-bottom:none;font-weight:700;font-size:13px;padding-top:10px}
+.badge{display:inline-block;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700}
+.badge-green{background:#dcfce7;color:#166534}
+.badge-amber{background:#fef3c7;color:#92400e}
+tr.rend-row td{background:#f0fdf4}
+tr.gmf-row td{background:#fff7ed}
+/* Módulo facturas */
+.fac-drop-area{border:2px dashed #c8d0e0;border-radius:14px;padding:32px;text-align:center;cursor:pointer;background:#fff;transition:all .2s;margin-bottom:14px}
+.fac-drop-area:hover,.fac-drop-area.drag{border-color:#2563eb;background:#eff6ff}
+.fac-drop-area input{display:none}
+.fac-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;max-height:200px;overflow-y:auto}
+.fac-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f4f6fb;border-radius:8px;font-size:12px}
+.fac-item-name{flex:1;font-weight:600;color:#1a2236;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fac-item-status{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:700;white-space:nowrap}
+.status-ok{background:#dcfce7;color:#166534}
+.status-warn{background:#fef3c7;color:#92400e}
+.status-err{background:#fef2f2;color:#991b1b}
+.review-table-wrap{overflow-x:auto;max-height:500px;overflow-y:auto;margin-bottom:14px}
+.review-table{width:100%;border-collapse:collapse;font-size:12px}
+.review-table th{padding:8px 10px;background:#f4f6fb;border-bottom:2px solid #dde3ef;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:#7a8aaa;white-space:nowrap;position:sticky;top:0;z-index:1}
+.review-table td{padding:7px 10px;border-bottom:1px solid #eef1f7;vertical-align:middle}
+.review-table tr:hover td{background:#f8fafd}
+.review-table select{padding:4px 8px;border:1.5px solid #dde3ef;border-radius:6px;font-size:11px;background:#fff;cursor:pointer;min-width:200px}
+.review-table select.warn{border-color:#f59e0b;background:#fffbeb}
+.fac-group-header{background:#eff6ff;font-weight:700;font-size:11px;color:#1e40af}
+.fac-group-header td{padding:6px 10px;border-bottom:1px solid #bfdbfe}
+.total-row td{font-weight:700;background:#f8fafd;font-size:12px}
+.btn-primary{padding:10px 22px;border:none;border-radius:8px;background:#2563eb;color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.btn-primary:hover{opacity:.88}.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="logo">
+<svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="lg1" x1="0" y1="0" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0d9e6e"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+    <linearGradient id="lg2" x1="0" y1="0" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#a7f3d0"/>
+      <stop offset="100%" stop-color="#bfdbfe"/>
+    </linearGradient>
+  </defs>
+  <!-- Fondo redondeado -->
+  <rect width="44" height="44" rx="12" fill="url(#lg1)"/>
+  <!-- Nodos de red neuronal -->
+  <!-- Capa izquierda -->
+  <circle cx="10" cy="15" r="3" fill="url(#lg2)" opacity="0.9"/>
+  <circle cx="10" cy="29" r="3" fill="url(#lg2)" opacity="0.9"/>
+  <!-- Capa central -->
+  <circle cx="22" cy="10" r="3" fill="white" opacity="0.95"/>
+  <circle cx="22" cy="22" r="3.5" fill="white"/>
+  <circle cx="22" cy="34" r="3" fill="white" opacity="0.95"/>
+  <!-- Capa derecha -->
+  <circle cx="34" cy="15" r="3" fill="url(#lg2)" opacity="0.9"/>
+  <circle cx="34" cy="29" r="3" fill="url(#lg2)" opacity="0.9"/>
+  <!-- Conexiones izq→centro -->
+  <line x1="13" y1="15" x2="19" y2="10" stroke="rgba(255,255,255,0.45)" stroke-width="1"/>
+  <line x1="13" y1="15" x2="19" y2="22" stroke="rgba(255,255,255,0.45)" stroke-width="1"/>
+  <line x1="13" y1="15" x2="19" y2="34" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+  <line x1="13" y1="29" x2="19" y2="10" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+  <line x1="13" y1="29" x2="19" y2="22" stroke="rgba(255,255,255,0.45)" stroke-width="1"/>
+  <line x1="13" y1="29" x2="19" y2="34" stroke="rgba(255,255,255,0.45)" stroke-width="1"/>
+  <!-- Conexiones centro→der -->
+  <line x1="25" y1="10" x2="31" y2="15" stroke="rgba(255,255,255,0.45)" stroke-width="1"/>
+  <line x1="25" y1="22" x2="31" y2="15" stroke="rgba(255,255,255,0.45)" stroke-width="1"/>
+  <line x1="25" y1="34" x2="31" y2="29" stroke="rgba(255,255,255,0.45)" stroke-width="1"/>
+  <line x1="25" y1="22" x2="31" y2="29" stroke="rgba(255,255,255,0.45)" stroke-width="1"/>
+  <line x1="25" y1="10" x2="31" y2="29" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+  <line x1="25" y1="34" x2="31" y2="15" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+  <!-- Símbolo $ en nodo central -->
+  <text x="22" y="26.5" font-family="Arial,sans-serif" font-size="6.5" font-weight="900"
+    fill="#0d9e6e" text-anchor="middle">$</text>
+</svg>
+</div>
+    <div>
+      <h1>Contafacil ANH - FNHN <span id="app-version" style="font-size:12px;font-weight:400;color:#7a8aaa;cursor:pointer;border-bottom:1px dashed #c8d0e0" onclick="toggleChangelog()" title="Ver historial de cambios">v2.2.0</span></h1>
+      <div class="sub">Extracto Bancario · Siigo · Conciliación 1:1, N:M, lotes ±4 días · Importación Contable Siigo</div>
+      <div id="changelog-panel" style="display:none;position:absolute;top:70px;left:60px;background:#fff;border:1.5px solid #dde3ef;border-radius:12px;padding:16px 20px;font-size:11px;color:#1a2236;line-height:1.9;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,.12);min-width:320px">
+        <div style="font-weight:700;font-size:13px;margin-bottom:8px">📋 Historial de versiones</div>
+        <div><b>v2.2.0</b> — 2026-11-10: Panel de configuración de contratos/CC, deduplicación de facturas entre cargues</div>
+        <div><b>v2.1.0</b>: Validación NIT/nombre receptor, sort cronológico facturas</div>
+        <div><b>v2.0.0</b>: CC BCS FNHN, neteo GMF, IVA alimentos separado, eliminar/editar CC facturas, alerta fechas</div>
+        <div><b>v1.0.0</b>: Versión inicial — Módulos 1, 2 y 3</div>
+        <div style="margin-top:10px;text-align:right"><button onclick="toggleChangelog()" style="border:none;background:#f4f6fb;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer">Cerrar</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-tabs">
+    <button class="main-tab on" onclick="mainTab('conciliacion')">⚖️ Conciliación Bancaria</button>
+    <button class="main-tab" onclick="mainTab('contable')">📋 Generar Movimiento Contable</button>
+    <button class="main-tab" onclick="mainTab('facturas')">🧾 Contabilizar Facturas</button>
+    <button class="main-tab" onclick="mainTab('config')">⚙️ Contratos / CC</button>
+  </div>
+
+  <!-- ══════════ MÓDULO 1: CONCILIACIÓN ══════════ -->
+  <div id="sec-conciliacion" class="section on">
+    <div id="upload-section">
+      <div class="grid2">
+        <label class="dz" id="dz-bank" ondragover="dzOv(event,'bank')" ondragleave="dzLv('bank')" ondrop="dzDp(event,'bank')">
+          <input type="file" id="input-bank" accept=".xlsx,.xls,.txt" onchange="loadBank(this.files[0])">
+          <div class="dz-icon">🏦</div>
+          <div><div class="dz-name" id="bank-name">Extracto Bancario</div><div class="dz-hint" id="bank-hint">Clic o arrastra · .xlsx o .txt</div></div>
+        </label>
+        <label class="dz" id="dz-aux" ondragover="dzOv(event,'aux')" ondragleave="dzLv('aux')" ondrop="dzDp(event,'aux')">
+          <input type="file" id="input-aux" accept=".xlsx,.xls" onchange="loadAux(this.files[0])">
+          <div class="dz-icon">📒</div>
+          <div><div class="dz-name" id="aux-name">Libro Auxiliar Siigo</div><div class="dz-hint" id="aux-hint">Clic o arrastra · .xlsx</div></div>
+        </label>
+      </div>
+      <div class="info"><strong>🔒 100% local:</strong> ningún archivo sale de tu navegador. &nbsp;|&nbsp; <strong>⚙️ Motor:</strong> 1:1 · N:M · lotes ±4 días</div>
+      <div class="err" id="conc-err"></div>
+      <button class="btn-run" id="btn-conc" disabled onclick="runConciliacion()">⚖️ Ejecutar Conciliación</button>
+    </div>
+    <div id="result-section" style="display:none">
+      <div class="stats" id="stats"></div>
+      <div class="toolbar">
+        <span id="dl-area"></span>
+        <button class="btn-sm" onclick="resetConc()">↩ Nueva conciliación</button>
+      </div>
+      <div class="panel">
+        <div class="tabs">
+          <button class="tab on" id="tab-matched" onclick="switchTab('matched')">Conciliados 1:1 <span class="chip" id="chip-matched" style="background:#0d9e6e22;color:#0d9e6e"></span></button>
+          <button class="tab" id="tab-grouped" onclick="switchTab('grouped')">Agrupados N:M <span class="chip" id="chip-grouped" style="background:#2563eb22;color:#2563eb"></span></button>
+          <button class="tab" id="tab-bank" onclick="switchTab('bank')">Solo Banco <span class="chip" id="chip-bank" style="background:#c97d0022;color:#c97d00"></span></button>
+          <button class="tab" id="tab-aux" onclick="switchTab('aux')">Solo Auxiliar <span class="chip" id="chip-aux" style="background:#c97d0022;color:#c97d00"></span></button>
+        </div>
+        <div class="tbl-wrap" id="tbl"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ MÓDULO 2: MOVIMIENTO CONTABLE ══════════ -->
+  <div id="sec-contable" class="section">
+    <div class="info-amber">
+      <strong>📋 Módulo de Importación Contable Siigo:</strong> Carga el extracto bancario y el sistema detectará automáticamente los <strong>Abonos de intereses (Rendimientos)</strong> y el <strong>Gravamen a los Movimientos Financieros (GMF)</strong>, generando el archivo plano listo para importar.
+    </div>
+
+    <div class="panel" style="padding:20px">
+      <div style="font-size:14px;font-weight:700;color:#1a2236;margin-bottom:16px">⚙️ Configuración del comprobante</div>
+      <div class="config-grid">
+        <div class="form-group">
+          <label class="form-label">Centro de costo / Contrato</label>
+          <select class="form-select" id="cc-select" onchange="ccChange()">
+            <option value="">-- Selecciona el contrato --</option>
+            <option value="1"  data-cuenta="1110050300" data-cont="Administrativo" data-nit-banco="860007335">1 - Administrativo</option>
+            <option value="1bcs" data-cuenta="1110050500" data-cont="BCS FNHN" data-nit-banco="860007335">1 - BCS FNHN</option>
+            <option value="15" data-cuenta="1110051100" data-cont="991"            data-nit-banco="860007335">15 - HCB SAMA 991-2024</option>
+            <option value="16" data-cuenta="1110051200" data-cont="1052"           data-nit-banco="860007335">16 - HCB BUES 1052-2024</option>
+            <option value="17" data-cuenta="1110051300" data-cont="328"            data-nit-banco="860007335">17 - CDI SANTAC 328-2025</option>
+            <option value="18" data-cuenta="1110051400" data-cont="828"            data-nit-banco="860007335">18 - CONT 828 SANTACRUZ-LA LLANADA</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Número de consecutivo (obligatorio)</label>
+          <input class="form-input" type="number" id="consecutivo" value="100" min="1" placeholder="Ej: 100">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cuenta bancaria (automático)</label>
+          <input class="form-input" type="text" id="cuenta-banco" readonly placeholder="Se llena al seleccionar contrato">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Extracto bancario (.xlsx o .txt)</label>
+          <label class="dz" id="dz-cont" style="padding:12px;border-radius:8px;flex-direction:row;justify-content:flex-start;text-align:left;"
+            ondragover="dzOv(event,'cont')" ondragleave="dzLv('cont')" ondrop="dzDp(event,'cont')">
+            <input type="file" id="input-cont" accept=".xlsx,.xls,.txt" onchange="loadCont(this.files[0])">
+            <span style="font-size:20px;margin-right:10px">🏦</span>
+            <div><div class="dz-name" id="cont-name" style="font-size:12px">Cargar extracto</div><div class="dz-hint" id="cont-hint">.xlsx o .txt · Clic o arrastra</div></div>
+          </label>
+        </div>
+      </div>
+      <div class="err" id="cont-err"></div>
+      <div class="ok" id="cont-ok"></div>
+      <button class="btn-run" id="btn-cont" disabled onclick="generarContable()" style="margin-bottom:0">📋 Generar Archivo de Importación Siigo</button>
+    </div>
+
+    <div id="cont-preview" style="display:none">
+      <div class="summary-card" id="cont-summary"></div>
+      <div class="toolbar">
+        <button class="btn-sm btn-dl" onclick="exportarContable()">📥 Descargar archivo para Siigo (.xlsx)</button>
+        <button class="btn-sm" onclick="resetContable()">↩ Nuevo movimiento</button>
+      </div>
+      <div class="panel">
+        <div style="padding:12px 16px;font-size:12px;font-weight:700;color:#1a2236;border-bottom:1.5px solid #dde3ef;display:flex;align-items:center;gap:12px">
+          Vista previa del archivo de importación
+          <span style="background:#dcfce7;color:#166534;border-radius:20px;padding:2px 10px;font-size:10px;font-weight:600">🟢 Rendimientos</span>
+          <span style="background:#fef3c7;color:#92400e;border-radius:20px;padding:2px 10px;font-size:10px;font-weight:600">🟡 GMF</span>
+        </div>
+        <div class="tbl-wrap" id="cont-tbl"></div>
+      </div>
+    </div>
+  </div>
+  <!-- ══════════ MÓDULO 3: CONTABILIZACIÓN FACTURAS ══════════ -->
+  <div id="sec-facturas" class="section">
+    <div class="info-amber">
+      <strong>🧾 Contabilización de Facturas Electrónicas (Documento P):</strong> Selecciona el contrato, carga los ZIPs o XMLs del lote y genera el archivo plano para importar en Siigo. El IVA se contabiliza como mayor valor del costo.
+    </div>
+
+    <div id="fac-upload-section">
+      <!-- Solo consecutivo — el CC se detecta por nota o se asigna por factura -->
+      <div class="panel" style="padding:20px;margin-bottom:14px">
+        <div style="font-size:14px;font-weight:700;color:#1a2236;margin-bottom:14px">⚙️ Configuración del lote</div>
+        <div style="max-width:340px">
+          <div class="form-group">
+            <label class="form-label">Número del primer consecutivo (P)</label>
+            <input class="form-input" type="number" id="fac-consec" value="1" min="1" placeholder="Ej: 1952" oninput="facUpdateBtn()">
+          </div>
+          <div class="info" style="margin-top:10px;margin-bottom:0">
+            💡 El contrato se detecta automáticamente desde la observación de cada factura. Si no se puede identificar, aparecerá un selector en la tabla para asignarlo manualmente.
+          </div>
+        </div>
+      </div>
+
+      <!-- Drop area -->
+      <label class="fac-drop-area" id="fac-dz" ondragover="facDzOv(event)" ondragleave="facDzLv()" ondrop="facDzDp(event)">
+        <input type="file" id="fac-input" accept=".zip,.xml" multiple onchange="facCargarArchivos(this.files)">
+        <div style="font-size:36px;margin-bottom:8px">📂</div>
+        <div style="font-size:14px;font-weight:700;color:#1a2236;margin-bottom:4px">Arrastra aquí los archivos ZIP o XML</div>
+        <div style="font-size:12px;color:#7a8aaa">Puedes cargar varios a la vez · .zip o .xml</div>
+      </label>
+
+      <div id="fac-list" class="fac-list" style="display:none"></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:12px;color:#7a8aaa" id="fac-acum-row" style="display:none">
+        <span id="fac-total-acumulado"></span>
+        <button class="btn-sm" style="padding:3px 10px;font-size:11px;color:#d63b3b;border-color:#fecaca" onclick="facLimpiarLote()" title="Limpiar lote acumulado y empezar de cero">🗑️ Limpiar lote</button>
+      </div>
+      <div class="err" id="fac-err"></div>
+      <div class="info-amber" id="fac-warn" style="display:none"></div>
+
+      <button class="btn-run" id="btn-fac-procesar" disabled onclick="facProcesar()">🔍 Leer facturas y preparar revisión</button>
+    </div>
+
+    <!-- Pantalla de revisión por grupos consolidados -->
+    <div id="fac-review-section" style="display:none">
+      <!-- Panel alerta de fechas -->
+      <div id="fac-fecha-alerta" style="display:none;background:#fffbeb;border:1.5px solid #f59e0b;border-radius:12px;padding:16px 20px;margin-bottom:16px"></div>
+      <div class="summary-card" id="fac-review-summary"></div>
+      <div style="font-size:13px;font-weight:700;color:#1a2236;margin-bottom:10px">
+        📋 Revisión — una línea por naturaleza de producto
+        <span style="font-size:11px;font-weight:400;color:#7a8aaa;margin-left:8px">
+          Filas en <span style="color:#92400e;background:#fef3c7;padding:1px 6px;border-radius:4px">amarillo</span> requieren tu atención
+        </span>
+      </div>
+      <div class="review-table-wrap">
+        <table class="review-table">
+          <thead>
+            <tr>
+              <th></th><th>Consec.</th><th>Factura</th><th>Fecha</th><th>Proveedor</th>
+              <th>Cuenta</th><th>Descripción línea</th><th>D/C</th><th>Valor</th><th>IVA</th>
+            </tr>
+          </thead>
+          <tbody id="fac-review-body"></tbody>
+        </table>
+      </div>
+      <div class="toolbar">
+        <button class="btn-sm btn-dl" onclick="facExportar()">📥 Generar archivo Siigo (.xlsx)</button>
+        <button class="btn-sm" onclick="facReset()">↩ Nueva carga</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;padding:24px 16px 16px;margin-top:8px;border-top:1px solid #dde3ef;color:#7a8aaa;font-size:11px;line-height:1.7">
+  <!-- ══════════ MÓDULO 4: CONFIGURACIÓN CONTRATOS ══════════ -->
+  <div id="sec-config" class="section">
+    <div class="info">⚙️ <b>Contratos / Centros de Costo</b> — Gestiona los contratos activos. Los cambios se guardan automáticamente en este navegador y se usan en los Módulos 2 y 3.</div>
+    <div class="toolbar" style="justify-content:flex-start;margin-bottom:14px">
+      <button class="btn-sm btn-dl" onclick="cfgNuevo()">➕ Nuevo contrato</button>
+      <button class="btn-sm" onclick="cfgRestaurar()" title="Restaurar contratos predeterminados originales">↩ Restaurar predeterminados</button>
+    </div>
+    <div class="panel">
+      <div class="tbl-wrap">
+        <table id="cfg-tabla">
+          <thead><tr>
+            <th>CC #</th><th>Nombre corto</th><th>Descripción</th><th>Cuenta bancaria</th><th>Tipo</th><th style="text-align:center">Acciones</th>
+          </tr></thead>
+          <tbody id="cfg-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CONTRATO -->
+  <div id="cfg-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center">
+    <div style="background:#fff;border-radius:16px;padding:28px 32px;width:460px;max-width:95vw;box-shadow:0 16px 48px rgba(0,0,0,.18)">
+      <div style="font-size:16px;font-weight:700;color:#1a2236;margin-bottom:20px" id="cfg-modal-title">Nuevo contrato</div>
+      <div class="config-grid">
+        <div class="form-group">
+          <label class="form-label">Número CC <span style="color:#d63b3b">*</span></label>
+          <input class="form-input" id="cfg-cc" placeholder="ej: 19" type="text">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nombre corto (para etiquetas)</label>
+          <input class="form-input" id="cfg-cont" placeholder="ej: HCB NUEVA">
+        </div>
+      </div>
+      <div class="config-grid">
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Descripción / etiqueta completa <span style="color:#d63b3b">*</span></label>
+          <input class="form-input" id="cfg-label" placeholder="ej: 19 - CDI NUEVA 456-2025">
+        </div>
+      </div>
+      <div class="config-grid">
+        <div class="form-group">
+          <label class="form-label">Cuenta bancaria Siigo <span style="color:#d63b3b">*</span></label>
+          <input class="form-input" id="cfg-cuenta" placeholder="ej: 1110051500" maxlength="15">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tipo</label>
+          <select class="form-select" id="cfg-tipo">
+            <option value="normal">Normal (HCB/CDI)</option>
+            <option value="adm">Administrativo (eAdm)</option>
+            <option value="bcs">BCS FNHN</option>
+          </select>
+        </div>
+      </div>
+      <div id="cfg-modal-err" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:9px 12px;font-size:12px;color:#991b1b;margin-top:8px"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+        <button class="btn-sm" onclick="cfgCerrarModal()">Cancelar</button>
+        <button class="btn-sm btn-dl" onclick="cfgGuardar()">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="font-weight:600;color:#1a2236;font-size:12px">Elaborado por: Darío Ferney Falcony</div>
+  <div>Contador Público · Mg. Gerencia y Asesoría Financiera</div>
+  <div style="margin-top:4px;font-size:10px;color:#b0bac9">Contafacil ANH - FNHN &nbsp;·&nbsp; Todos los derechos reservados</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// CHANGELOG
+// ═══════════════════════════════════════
+function toggleChangelog(){
+  const p=document.getElementById('changelog-panel');
+  p.style.display=p.style.display==='none'?'block':'none';
+}
+document.addEventListener('click',e=>{
+  const p=document.getElementById('changelog-panel');
+  if(p&&p.style.display==='block'&&!p.contains(e.target)&&e.target.id!=='app-version') p.style.display='none';
+});
+
+// ═══════════════════════════════════════
+// CONTRATOS / CC — CONFIGURACIÓN DINÁMICA
+// ═══════════════════════════════════════
+const CFG_KEY='contafacil_contratos_v1';
+const CFG_DEFAULT=[
+  {cc:'1',    cont:'',       label:'1 - Administrativo',            cuenta:'1110050300',tipo:'adm'},
+  {cc:'1bcs', cont:'',       label:'1 - BCS FNHN',                  cuenta:'1110050500',tipo:'bcs'},
+  {cc:'15',   cont:'991',    label:'15 - HCB SAMA 991-2024',        cuenta:'1110051100',tipo:'normal'},
+  {cc:'16',   cont:'1052',   label:'16 - HCB BUES 1052-2024',       cuenta:'1110051200',tipo:'normal'},
+  {cc:'17',   cont:'328',    label:'17 - CDI SANTAC 328-2025',      cuenta:'1110051300',tipo:'normal'},
+  {cc:'18',   cont:'828',    label:'18 - CONT 828 SANTACRUZ-LA LLANADA', cuenta:'1110051400',tipo:'normal'},
+];
+
+function cfgCargar(){
+  try{const d=localStorage.getItem(CFG_KEY);if(d)return JSON.parse(d);}catch(e){}
+  return JSON.parse(JSON.stringify(CFG_DEFAULT));
+}
+function cfgGuardarLS(lista){
+  try{localStorage.setItem(CFG_KEY,JSON.stringify(lista));}catch(e){}
+}
+function cfgGetLista(){return cfgCargar();}
+
+// Reconstruir CENTROS y FAC_CENTROS dinámicamente
+function cfgReconstruirCentros(){
+  const lista=cfgCargar();
+  // Limpiar y repoblar CENTROS (módulo 2)
+  Object.keys(CENTROS).forEach(k=>delete CENTROS[k]);
+  lista.forEach(c=>{
+    CENTROS[c.cc]={
+      cuenta:c.cuenta,
+      cont:c.cont||'',
+      cc:isNaN(c.cc)?1:parseInt(c.cc),
+      eAdm:c.tipo==='adm',
+      eBcs:c.tipo==='bcs'
+    };
+  });
+  // Limpiar y repoblar FAC_CENTROS (módulo 3)
+  Object.keys(FAC_CENTROS).forEach(k=>delete FAC_CENTROS[k]);
+  lista.forEach(c=>{
+    if(c.tipo!=='bcs'){
+      FAC_CENTROS[c.cc]={
+        cc:isNaN(c.cc)?1:parseInt(c.cc),
+        contNum:c.cont||'',
+        label:c.label
+      };
+    }
+  });
+  // Repoblar select módulo 2
+  const sel=document.getElementById('cc-select');
+  if(sel){
+    const prev=sel.value;
+    sel.innerHTML='<option value="">-- Selecciona el contrato --</option>';
+    lista.forEach(c=>{
+      const opt=document.createElement('option');
+      opt.value=c.cc;
+      opt.setAttribute('data-cuenta',c.cuenta);
+      opt.setAttribute('data-cont',c.cont||'');
+      opt.setAttribute('data-nit-banco','860007335');
+      opt.textContent=c.label;
+      sel.appendChild(opt);
+    });
+    if(prev) sel.value=prev;
+  }
+  // Repoblar select módulo 3
+  const sel3=document.getElementById('fac-cc-select');
+  if(sel3){
+    const prev3=sel3.value;
+    sel3.innerHTML='<option value="">-- Selecciona el contrato --</option>';
+    lista.forEach(c=>{
+      if(c.tipo==='bcs') return;
+      const opt=document.createElement('option');
+      opt.value=c.cc;
+      opt.textContent=c.label;
+      sel3.appendChild(opt);
+    });
+    if(prev3) sel3.value=prev3;
+  }
+}
+
+// Renderizar tabla de contratos
+function cfgRenderTabla(){
+  const lista=cfgCargar();
+  const tbody=document.getElementById('cfg-tbody');
+  if(!tbody)return;
+  const tipos={adm:'<span class="badge badge-amber">Administrativo</span>',bcs:'<span class="badge" style="background:#ede9fe;color:#5b21b6">BCS FNHN</span>',normal:'<span class="badge badge-green">Normal</span>'};
+  tbody.innerHTML=lista.map((c,i)=>`
+    <tr>
+      <td style="font-weight:700">${c.cc}</td>
+      <td>${c.cont||'—'}</td>
+      <td>${c.label}</td>
+      <td style="font-family:monospace">${c.cuenta}</td>
+      <td>${tipos[c.tipo]||tipos.normal}</td>
+      <td style="text-align:center;white-space:nowrap">
+        <button class="btn-sm" style="padding:4px 10px;font-size:11px" onclick="cfgEditar(${i})">✏️</button>
+        <button class="btn-sm" style="padding:4px 10px;font-size:11px;color:#d63b3b;border-color:#fecaca" onclick="cfgEliminar(${i})">🗑️</button>
+      </td>
+    </tr>`).join('');
+}
+
+let _cfgEditIdx=null;
+function cfgNuevo(){
+  _cfgEditIdx=null;
+  document.getElementById('cfg-modal-title').textContent='Nuevo contrato';
+  document.getElementById('cfg-cc').value='';
+  document.getElementById('cfg-cont').value='';
+  document.getElementById('cfg-label').value='';
+  document.getElementById('cfg-cuenta').value='';
+  document.getElementById('cfg-tipo').value='normal';
+  document.getElementById('cfg-modal-err').style.display='none';
+  document.getElementById('cfg-modal').style.display='flex';
+}
+function cfgEditar(i){
+  const lista=cfgCargar();const c=lista[i];
+  _cfgEditIdx=i;
+  document.getElementById('cfg-modal-title').textContent='Editar contrato';
+  document.getElementById('cfg-cc').value=c.cc;
+  document.getElementById('cfg-cont').value=c.cont||'';
+  document.getElementById('cfg-label').value=c.label;
+  document.getElementById('cfg-cuenta').value=c.cuenta;
+  document.getElementById('cfg-tipo').value=c.tipo||'normal';
+  document.getElementById('cfg-modal-err').style.display='none';
+  document.getElementById('cfg-modal').style.display='flex';
+}
+function cfgCerrarModal(){
+  document.getElementById('cfg-modal').style.display='none';
+}
+function cfgGuardar(){
+  const cc=document.getElementById('cfg-cc').value.trim();
+  const cont=document.getElementById('cfg-cont').value.trim();
+  const label=document.getElementById('cfg-label').value.trim();
+  const cuenta=document.getElementById('cfg-cuenta').value.trim();
+  const tipo=document.getElementById('cfg-tipo').value;
+  const errEl=document.getElementById('cfg-modal-err');
+  if(!cc||!label||!cuenta){errEl.textContent='CC, descripción y cuenta son obligatorios.';errEl.style.display='block';return;}
+  if(!/^\d{10,13}$/.test(cuenta)){errEl.textContent='La cuenta Siigo debe tener 10–13 dígitos.';errEl.style.display='block';return;}
+  const lista=cfgCargar();
+  const nuevo={cc,cont,label,cuenta,tipo};
+  if(_cfgEditIdx===null){
+    if(lista.some(x=>x.cc===cc)){errEl.textContent='Ya existe un contrato con CC "'+cc+'".';errEl.style.display='block';return;}
+    lista.push(nuevo);
+  }else{
+    lista[_cfgEditIdx]=nuevo;
+  }
+  cfgGuardarLS(lista);
+  cfgCerrarModal();
+  cfgRenderTabla();
+  cfgReconstruirCentros();
+}
+function cfgEliminar(i){
+  if(!confirm('¿Eliminar este contrato?'))return;
+  const lista=cfgCargar();
+  lista.splice(i,1);
+  cfgGuardarLS(lista);
+  cfgRenderTabla();
+  cfgReconstruirCentros();
+}
+function cfgRestaurar(){
+  if(!confirm('¿Restaurar los contratos predeterminados? Se perderán los cambios actuales.'))return;
+  cfgGuardarLS(JSON.parse(JSON.stringify(CFG_DEFAULT)));
+  cfgRenderTabla();
+  cfgReconstruirCentros();
+}
+
+// ═══════════════════════════════════════
+// NAVEGACIÓN PRINCIPAL
+// ═══════════════════════════════════════
+function mainTab(id){
+  const ids=['conciliacion','contable','facturas','config'];
+  document.querySelectorAll('.main-tab').forEach((b,i)=>b.classList.toggle('on',ids[i]===id));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('on'));
+  document.getElementById('sec-'+id).classList.add('on');
+}
+
+// ═══════════════════════════════════════
+// DRAG & DROP
+// ═══════════════════════════════════════
+function dzOv(e,z){e.preventDefault();document.getElementById('dz-'+z).classList.add('drag');}
+function dzLv(z){document.getElementById('dz-'+z).classList.remove('drag');}
+function dzDp(e,z){e.preventDefault();dzLv(z);const f=e.dataTransfer.files[0];if(!f)return;if(z==='bank')loadBank(f);else if(z==='aux')loadAux(f);else loadCont(f);}
+
+// ═══════════════════════════════════════
+// UTILIDADES
+// ═══════════════════════════════════════
+const fmt=n=>new Intl.NumberFormat("es-CO",{style:"currency",currency:"COP",maximumFractionDigits:2}).format(n??0);
+const sumAmt=rows=>rows.reduce((s,r)=>s+(r.amount??0),0);
+const norm=(s="")=>s.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9\s]/g,"").trim();
+const wordSim=(a,b)=>{const sa=new Set(norm(a).split(/\s+/).filter(Boolean)),sb=new Set(norm(b).split(/\s+/).filter(Boolean));return[...sa].filter(w=>sb.has(w)).length/Math.max(sa.size,sb.size,1);};
+const MESES={enero:"01",febrero:"02",marzo:"03",abril:"04",mayo:"05",junio:"06",julio:"07",agosto:"08",septiembre:"09",octubre:"10",noviembre:"11",diciembre:"12"};
+const EPS=1.0,DATE_WINDOW=4,MAX_BANK=6;
+const dateDiff=(a,b)=>Math.abs((new Date(a+"T00:00:00")-new Date(b+"T00:00:00"))/86400000);
+const parseAmt=s=>{
+  if(s==null||s==="")return null;if(typeof s==="number")return Math.round(s*100)/100;
+  let t=s.toString().trim(),neg=t.startsWith("(")&&t.endsWith(")");
+  t=t.replace(/[\(\)\$\s]/g,"");if(!t)return null;
+  if(t.includes(",")&&t.includes(".")){if(t.lastIndexOf(",")>t.lastIndexOf("."))t=t.replace(/\./g,"").replace(",",".");else t=t.replace(/,/g,"");}
+  else if(t.includes(",")&&!t.includes("."))t=t.replace(",",".");
+  const n=parseFloat(t);if(isNaN(n))return null;return Math.round(n*(neg?-1:1)*100)/100;
+};
+const parseDate=v=>{
+  if(!v)return null;if(v instanceof Date)return v.toISOString().slice(0,10);
+  const s=v.toString().trim();
+  const mL=s.match(/^(\w+)\s+(\d{1,2})\s+de\s+(\d{4})$/i);
+  if(mL){const m=MESES[mL[1].toLowerCase()];if(m)return`${mL[3]}-${m}-${mL[2].padStart(2,"0")}`;}
+  const m1=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if(m1){const y=m1[3].length===2?"20"+m1[3]:m1[3];return`${y}-${m1[2].padStart(2,"0")}-${m1[1].padStart(2,"0")}`;}
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+  const n=parseFloat(s);if(!isNaN(n)&&n>40000)return new Date((n-25569)*86400000).toISOString().slice(0,10);
+  return s;
+};
+
+// ═══════════════════════════════════════
+// PARSERS EXTRACTO
+// ═══════════════════════════════════════
+function parseDaviviendaTxt(text){
+  const MES={ENERO:"01",FEBRERO:"02",MARZO:"03",ABRIL:"04",MAYO:"05",JUNIO:"06",JULIO:"07",AGOSTO:"08",SEPTIEMBRE:"09",OCTUBRE:"10",NOVIEMBRE:"11",DICIEMBRE:"12"};
+  let year=new Date().getFullYear().toString(),month="01";
+  const mm=text.match(/INFORME DEL MES[:\s]+(ENERO|FEBRERO|MARZO|ABRIL|MAYO|JUNIO|JULIO|AGOSTO|SEPTIEMBRE|OCTUBRE|NOVIEMBRE|DICIEMBRE)[^0-9]*(\d{4})/i);
+  if(mm){month=MES[mm[1].toUpperCase()]||"01";year=mm[2];}
+  const TX=/^\s{10,}(\d{2})\s+(\d{2})\s+\$\s*([\d,\.]+)([\+\-])\s+(\d+)\s+(.+)$/,CT=/^\s{55,}(\S.*)$/;
+  const lines=text.split(/\r?\n/),txs=[];let last=null;
+  for(const raw of lines){
+    const mT=TX.exec(raw);
+    if(mT){const sign=mT[4]==="+"?1:-1,amount=Math.round(parseFloat(mT[3].replace(/,/g,""))*sign*100)/100;
+      const tx={id:`txt-${txs.length}`,date:`${year}-${month}-${mT[1]}`,doc:mT[5],desc:mT[6].replace(/\s{2,}[A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ\s\.]{4,}$/,"").trim(),infAd:"",amount};txs.push(tx);last=tx;}
+    else if(last){const mC=CT.exec(raw);
+      if(mC){const e=mC[1].trim();if(e&&!e.includes("Banco Davivienda")&&!e.includes("NIT")&&!e.includes("CUENTA DE")&&!e.includes("Fecha")&&!e.startsWith("(")&&!e.includes("@")&&!e.includes("www.")&&!e.includes("seguro")&&!e.includes("Cualquier")&&!e.includes("Recuerde")&&!e.includes("Consumidor"))last.desc+=" "+e;}
+      else if(raw.trim())last=null;}
+  }
+  if(!txs.length)throw new Error("Sin movimientos en TXT Davivienda.");return txs;
+}
+function parseBankExcel(wb,si=0){
+  const ws=wb.Sheets[wb.SheetNames[si]],raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:""});
+  if(raw.length<2)throw new Error("Extracto vacío.");
+  // Detectar fila de encabezados en las primeras 8 filas
+  let hi=-1;
+  for(let i=0;i<Math.min(raw.length,8);i++){
+    const j=raw[i].map(h=>h.toString().toLowerCase()).join(" ");
+    if(j.includes("fecha")&&j.includes("descripci")){hi=i;break;}
+    if(j.includes("fecha de sistema")&&j.includes("valor total")){hi=i;break;}
+  }
+  if(hi===-1)hi=0;
+  const hdr=raw[hi].map(h=>h.toString().trim().toLowerCase());
+  const col=(...c)=>{for(const k of c){const i=hdr.findIndex(h=>h.includes(k));if(i!==-1)return i;}return -1;};
+  // Formato Davivienda clásico
+  if(hdr.some(h=>h.includes("fecha de sistema"))&&hdr.some(h=>h.includes("valor total"))){
+    const cF=col("fecha de sistema"),cDc=col("documento"),cDs=col("descripci"),cT=col("transacci"),cV=col("valor total");
+    const rows=[];
+    for(let r=hi+1;r<raw.length;r++){const row=raw[r],f=parseDate(row[cF]);if(!f||!/^\d{4}-\d{2}-\d{2}$/.test(f))continue;const va=parseAmt(cV!==-1?row[cV]:"");if(va===null)continue;const tipo=(cT!==-1?row[cT]:"").toString().toLowerCase(),amount=Math.round(va*(tipo.includes("cr")?1:-1)*100)/100;rows.push({id:`bank-${rows.length}`,date:f,doc:(cDc!==-1?row[cDc]:"").toString().trim(),desc:(cDs!==-1?row[cDs]:"").toString().trim(),infAd:"",amount});}
+    if(!rows.length)throw new Error("Sin movimientos Davivienda.");return rows;
+  }
+  // Formato Caja Social y formatos genéricos (Fecha|Descripción|Oficina|Valor|Documento|Inf.Adicional)
+  const cF=col("fecha","date","fec");
+  const cD=col("descripci","concepto","detalle","clase de mov","glosa","memo");
+  const cDc=col("documento","doc","ref","numero","nro","comprobante","voucher");
+  const cV=col("valor","monto","importe","amount");
+  const cDb=col("debito","cargo","retiro","egreso","debit");
+  const cCr=col("credito","abono deposito","ingreso","credit");
+  const cInf=col("inf. adicional","inf adicional","informacion adicional","inf.");
+  if(cF===-1)throw new Error("No se encontró columna de fecha en el extracto.");
+  if(cV===-1&&(cDb===-1||cCr===-1))throw new Error("No se encontró columna de valor en el extracto.");
+  const rows=[];
+  for(let r=hi+1;r<raw.length;r++){
+    const row=raw[r];
+    const f=parseDate(row[cF]);
+    if(!f||!/^\d{4}-\d{2}-\d{2}$/.test(f))continue;
+    let amount=null;
+    if(cDb!==-1&&cCr!==-1){const d=parseAmt(row[cDb])??0,c=parseAmt(row[cCr])??0;if(d!==0||c!==0)amount=Math.round((c-d)*100)/100;}
+    else amount=parseAmt(row[cV]);
+    if(amount===null)continue;
+    rows.push({id:`bank-${rows.length}`,date:f,doc:(cDc!==-1?row[cDc]:"").toString().trim(),desc:(cD!==-1?row[cD]:"").toString().trim(),infAd:(cInf!==-1?row[cInf]:"").toString().trim(),amount});
+  }
+  if(!rows.length)throw new Error("Sin movimientos en extracto.");return rows;
+}
+
+function parseSiigoExcel(wb,si=0){
+  const ws=wb.Sheets[wb.SheetNames[si]],raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:""});
+  let hi=6;for(let i=0;i<Math.min(raw.length,15);i++){const j=raw[i].join(" ").toUpperCase();if(j.includes("DEBITO")||(j.includes("FECHA")&&j.includes("CREDITO"))){hi=i;break;}}
+  const hdr=raw[hi].map(h=>h.toString().trim().toUpperCase());
+  const col=(...c)=>{for(const k of c){const i=hdr.findIndex(h=>h.includes(k));if(i!==-1)return i;}return -1;};
+  const cF=col("FECHA"),cC=col("COMPROBANTE"),cD=col("DETALLE"),cDb=col("DEBITO"),cCr=col("CREDITO");
+  const rows=[];
+  for(let r=hi+1;r<raw.length;r++){const row=raw[r],f=parseDate(cF!==-1?row[cF]:null);if(!f||!/^\d{4}-\d{2}-\d{2}$/.test(f))continue;
+    const deb=cDb!==-1?(parseAmt(row[cDb])??0):0,cre=cCr!==-1?(parseAmt(row[cCr])??0):0;if(deb===0&&cre===0)continue;
+    rows.push({id:`aux-${rows.length}`,date:f,desc:cD!==-1?row[cD].toString().trim():"",comp:cC!==-1?row[cC].toString().trim():"",debito:deb,credito:cre,amount:Math.round((deb-cre)*100)/100});}
+  if(!rows.length)throw new Error("Sin movimientos en auxiliar.");return rows;
+}
+
+// ═══════════════════════════════════════
+// CONCILIACIÓN
+// ═══════════════════════════════════════
+function compKey(comp){const m=comp.trim().match(/^(.+?)\s+\d{4,6}$/);return m?m[1].trim():comp.trim();}
+function* subsets(arr,k){if(k===0){yield[];return;}if(arr.length<k)return;const[first,...rest]=arr;for(const s of subsets(rest,k-1))yield[first,...s];yield* subsets(rest,k);}
+function reconcile(bankRows,auxRows){
+  const usedB=new Set(),usedA=new Set(),matched1=[],matchedN=[];
+  for(const b of bankRows)for(const a of auxRows)if(!usedB.has(b.id)&&!usedA.has(a.id)&&Math.abs(Math.abs(b.amount)-Math.abs(a.amount))<=EPS&&b.date===a.date){matched1.push({bank:b,aux:a,confidence:"Alta",reason:"Valor + Fecha exactos"});usedB.add(b.id);usedA.add(a.id);}
+  for(const b of bankRows)for(const a of auxRows)if(!usedB.has(b.id)&&!usedA.has(a.id)&&Math.abs(Math.abs(b.amount)-Math.abs(a.amount))<=EPS&&wordSim(b.desc,a.desc)>=0.25){matched1.push({bank:b,aux:a,confidence:"Media",reason:"Valor + Descripción similar"});usedB.add(b.id);usedA.add(a.id);}
+  for(const b of bankRows)for(const a of auxRows)if(!usedB.has(b.id)&&!usedA.has(a.id)&&Math.abs(Math.abs(b.amount)-Math.abs(a.amount))<=EPS){matched1.push({bank:b,aux:a,confidence:"Baja",reason:"Solo valor exacto"});usedB.add(b.id);usedA.add(a.id);}
+  const auxByComp=new Map();
+  for(const a of auxRows){if(usedA.has(a.id))continue;const k=compKey(a.comp);if(!auxByComp.has(k))auxByComp.set(k,[]);auxByComp.get(k).push(a);}
+  for(const[compK,auxGroup]of auxByComp){
+    if(auxGroup.some(a=>usedA.has(a.id)))continue;
+    const auxTotal=auxGroup.reduce((s,a)=>s+Math.abs(a.amount),0);
+    const auxDates=auxGroup.map(a=>a.date);
+    const bankCands=bankRows.filter(b=>!usedB.has(b.id)&&b.amount<0&&auxDates.some(d=>dateDiff(b.date,d)<=DATE_WINDOW));
+    if(!bankCands.length)continue;
+    let found=null;
+    for(const b of bankCands){if(Math.abs(Math.abs(b.amount)-auxTotal)<=EPS){found={bankGroup:[b],auxGroup,reason:`1 banco → ${auxGroup.length} aux · ${compK}`};break;}}
+    if(!found){outer:for(let k=2;k<=Math.min(MAX_BANK,bankCands.length);k++){for(const combo of subsets(bankCands,k)){const s=combo.reduce((t,b)=>t+Math.abs(b.amount),0);if(Math.abs(s-auxTotal)<=EPS){found={bankGroup:combo,auxGroup,reason:`${k} bancos → ${auxGroup.length} aux · ${compK}`};break outer;}}}}
+    if(found){found.bankGroup.forEach(b=>usedB.add(b.id));found.auxGroup.forEach(a=>usedA.add(a.id));matchedN.push(found);}
+  }
+  return{matched1,matchedN,onlyBank:bankRows.filter(r=>!usedB.has(r.id)),onlyAux:auxRows.filter(r=>!usedA.has(r.id))};
+}
+
+let bankWb=null,auxWb=null,currentResult=null,activeTab="matched";
+function showErr(id,msg){const e=document.getElementById(id);e.style.display="block";e.textContent="⚠️ "+msg;}
+function hideErr(id){document.getElementById(id).style.display="none";}
+function showOk(id,msg){const e=document.getElementById(id);e.style.display="block";e.textContent="✓ "+msg;}
+
+async function loadBank(f){if(!f)return;hideErr('conc-err');
+  try{if(f.name.split('.').pop().toLowerCase()==='txt'){bankWb={_txt:await f.text()};}else{bankWb=XLSX.read(await f.arrayBuffer(),{type:"array"});}
+  document.getElementById('bank-name').textContent=f.name;document.getElementById('bank-hint').textContent='✓ '+(f.size/1024).toFixed(0)+' KB';document.getElementById('dz-bank').classList.add('done');}
+  catch{showErr('conc-err',"No se pudo leer el extracto.");}updateConcBtn();}
+async function loadAux(f){if(!f)return;hideErr('conc-err');
+  try{auxWb=XLSX.read(await f.arrayBuffer(),{type:"array"});
+  document.getElementById('aux-name').textContent=f.name;document.getElementById('aux-hint').textContent='✓ '+(f.size/1024).toFixed(0)+' KB';document.getElementById('dz-aux').classList.add('done');}
+  catch{showErr('conc-err',"No se pudo leer el auxiliar.");}updateConcBtn();}
+function updateConcBtn(){document.getElementById('btn-conc').disabled=!(bankWb&&auxWb);}
+
+function runConciliacion(){
+  if(!bankWb||!auxWb)return;hideErr('conc-err');
+  try{
+    const bankRows=bankWb._txt?parseDaviviendaTxt(bankWb._txt):parseBankExcel(bankWb,0);
+    const auxRows=parseSiigoExcel(auxWb,0);
+    currentResult=reconcile(bankRows,auxRows);showResult(currentResult);
+  }catch(e){showErr('conc-err',e.message);}
+}
+function showResult(r){
+  const tBN=r.matchedN.reduce((s,g)=>s+g.bankGroup.length,0),tAN=r.matchedN.reduce((s,g)=>s+g.auxGroup.length,0);
+  const diffNet=sumAmt(r.onlyBank)-sumAmt(r.onlyAux);
+  document.getElementById('stats').innerHTML=`
+    <div class="stat"><div class="stat-label">Conciliados 1:1</div><div class="stat-val green">${r.matched1.length}</div><div class="stat-sub">coincidencia directa</div></div>
+    <div class="stat"><div class="stat-label">Grupos N:M</div><div class="stat-val" style="color:#2563eb">${r.matchedN.length}</div><div class="stat-sub">${tBN} banco · ${tAN} aux</div></div>
+    <div class="stat"><div class="stat-label">Sin conciliar</div><div class="stat-val amber">${r.onlyBank.length+r.onlyAux.length}</div><div class="stat-sub">${r.onlyBank.length} banco · ${r.onlyAux.length} aux</div></div>
+    <div class="stat"><div class="stat-label">Diferencia</div><div class="stat-val ${diffNet===0?'green':'red'}">${fmt(Math.abs(diffNet))}</div><div class="stat-sub">${diffNet===0?"✓ Cuadra":diffNet>0?"Banco > Aux":"Aux > Banco"}</div></div>`;
+  document.getElementById('chip-matched').textContent=r.matched1.length;
+  document.getElementById('chip-grouped').textContent=r.matchedN.length;
+  document.getElementById('chip-bank').textContent=r.onlyBank.length;
+  document.getElementById('chip-aux').textContent=r.onlyAux.length;
+  document.getElementById('dl-area').innerHTML=`<button class="btn-sm btn-dl" onclick="exportConc()">📥 Exportar Excel</button>`;
+  document.getElementById('upload-section').style.display='none';
+  document.getElementById('result-section').style.display='block';
+  switchTab('matched');
+}
+function resetConc(){
+  bankWb=null;auxWb=null;currentResult=null;
+  ['bank','aux'].forEach(z=>{
+    document.getElementById(`${z}-name`).textContent=z==='bank'?'Extracto Bancario':'Libro Auxiliar Siigo';
+    document.getElementById(`${z}-hint`).textContent=z==='bank'?'Clic o arrastra · .xlsx o .txt':'Clic o arrastra · .xlsx';
+    document.getElementById(`dz-${z}`).classList.remove('done');
+    document.getElementById(`input-${z}`).value='';
+  });
+  hideErr('conc-err');updateConcBtn();
+  document.getElementById('upload-section').style.display='block';
+  document.getElementById('result-section').style.display='none';
+}
+function switchTab(tab){
+  activeTab=tab;
+  ['matched','grouped','bank','aux'].forEach(t=>{document.getElementById(`tab-${t}`).classList.toggle('on',t===tab);});
+  renderConcTable(tab);
+}
+function renderConcTable(tab){
+  const c=document.getElementById('tbl');if(!currentResult){c.innerHTML='';return;}
+  const r=currentResult;let h='';
+  if(tab==='matched'){
+    if(!r.matched1.length){c.innerHTML=`<div class="empty">No hay conciliaciones 1:1.</div>`;return;}
+    h=`<table><thead><tr><th>Fecha Banco</th><th>Descripción Banco</th><th>Valor Banco</th><th>Conf.</th><th>Razón</th><th>Fecha Aux</th><th>Descripción Aux</th><th>Débito</th><th>Crédito</th></tr></thead><tbody>`;
+    for(const m of r.matched1){const cc=m.confidence==='Alta'?'#0d9e6e':m.confidence==='Media'?'#c97d00':'#d63b3b';
+      h+=`<tr><td>${m.bank.date}</td><td class="ellipsis" title="${m.bank.desc}">${m.bank.desc}</td><td class="${m.bank.amount>=0?'green':'red'}">${fmt(m.bank.amount)}</td><td><span style="background:${cc}22;color:${cc};border:1px solid ${cc}55;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700">${m.confidence}</span></td><td class="muted">${m.reason}</td><td>${m.aux.date}</td><td class="muted ellipsis">${m.aux.desc}</td><td class="green">${m.aux.debito?fmt(m.aux.debito):'—'}</td><td class="red">${m.aux.credito?fmt(m.aux.credito):'—'}</td></tr>`;}
+    h+=`</tbody></table>`;
+  }else if(tab==='grouped'){
+    if(!r.matchedN.length){c.innerHTML=`<div class="empty">No se encontraron grupos N:M.</div>`;return;}
+    h=`<table><thead><tr><th>#</th><th>Movimientos Banco</th><th>Total Banco</th><th>Movimientos Auxiliar</th><th>Total Aux</th><th>Razón</th></tr></thead><tbody>`;
+    r.matchedN.forEach((g,gi)=>{
+      const tB=g.bankGroup.reduce((s,b)=>s+Math.abs(b.amount),0),tA=g.auxGroup.reduce((s,a)=>s+Math.abs(a.amount),0);
+      const bL=g.bankGroup.map(b=>`<div style="font-size:11px;padding:2px 0;border-bottom:1px solid #f0f2f7">${b.date} <span class="muted">${b.doc}</span> <span class="red">${fmt(b.amount)}</span></div>`).join('');
+      const aL=g.auxGroup.map(a=>`<div style="font-size:11px;padding:2px 0;border-bottom:1px solid #f0f2f7">${a.date} <span class="muted">${a.comp}</span> ${a.desc.slice(0,25)} <span class="green">${fmt(a.credito||a.amount)}</span></div>`).join('');
+      h+=`<tr><td class="muted">${gi+1}</td><td>${bL}</td><td class="red">${fmt(tB)}</td><td>${aL}</td><td class="green">${fmt(tA)}</td><td style="color:#2563eb;font-size:11px">${g.reason}</td></tr>`;
+    });h+=`</tbody></table>`;
+  }else if(tab==='bank'){
+    if(!r.onlyBank.length){c.innerHTML=`<div class="empty">✓ Todos los movimientos del banco están conciliados.</div>`;return;}
+    h=`<table><thead><tr><th>Fecha</th><th>Documento</th><th>Descripción</th><th>Inf. Adicional</th><th>Valor</th></tr></thead><tbody>`;
+    for(const row of r.onlyBank)h+=`<tr><td>${row.date}</td><td>${row.doc}</td><td>${row.desc}</td><td class="muted">${row.infAd||''}</td><td class="${row.amount>=0?'green':'red'}">${fmt(row.amount)}</td></tr>`;
+    h+=`</tbody></table>`;
+  }else{
+    if(!r.onlyAux.length){c.innerHTML=`<div class="empty">✓ Todos los movimientos del auxiliar están conciliados.</div>`;return;}
+    h=`<table><thead><tr><th>Fecha</th><th>Comprobante</th><th>Descripción</th><th>Débito</th><th>Crédito</th><th>Neto</th></tr></thead><tbody>`;
+    for(const row of r.onlyAux)h+=`<tr><td>${row.date}</td><td>${row.comp}</td><td>${row.desc}</td><td class="green">${row.debito?fmt(row.debito):'—'}</td><td class="red">${row.credito?fmt(row.credito):'—'}</td><td class="${row.amount>=0?'green':'red'}">${fmt(row.amount)}</td></tr>`;
+    h+=`</tbody></table>`;
+  }
+  c.innerHTML=h;
+}
+function exportConc(){
+  if(!currentResult)return;
+  const wb=XLSX.utils.book_new(),NF='#,##0.00';
+  const ms=(headers,data,numCols)=>{
+    const ws=XLSX.utils.aoa_to_sheet([headers,...data]);
+    const range=XLSX.utils.decode_range(ws['!ref']||'A1');
+    for(let R=1;R<=range.e.r;R++)for(const C of numCols){const addr=XLSX.utils.encode_cell({r:R,c:C});if(ws[addr]&&typeof ws[addr].v==='number')ws[addr].z=NF;}
+    ws['!cols']=headers.map((h,ci)=>{let max=h.length;data.forEach(row=>{const v=(row[ci]??'').toString();if(v.length>max)max=v.length;});return{wch:Math.min(max+2,55)};});return ws;
+  };
+  const r=currentResult;
+  XLSX.utils.book_append_sheet(wb,ms(["Fecha Banco","Descripción Banco","Valor Banco","Confianza","Razón","Fecha Aux","Descripción Aux","Débito Aux","Crédito Aux"],r.matched1.map(m=>[m.bank.date,m.bank.desc,m.bank.amount,m.confidence,m.reason,m.aux.date,m.aux.desc,m.aux.debito||0,m.aux.credito||0]),[2,7,8]),"Conciliados 1a1");
+  const d2=[];for(const g of r.matchedN){const cs=g.auxGroup.map(a=>a.comp).join(" | "),da=g.auxGroup[0]?g.auxGroup[0].desc:"",ta=g.auxGroup.reduce((s,a)=>s+Math.abs(a.amount),0);for(const b of g.bankGroup)d2.push([b.date,b.doc,b.desc,b.amount,g.reason,cs,da,ta]);}
+  XLSX.utils.book_append_sheet(wb,ms(["Fecha Banco","Doc Banco","Desc Banco","Valor Banco","Razón","Comprobantes Aux","Desc Aux","Total Aux"],d2,[3,7]),"Conciliados Agrupados");
+  XLSX.utils.book_append_sheet(wb,ms(["Fecha","Documento","Descripción","Inf. Adicional","Valor"],r.onlyBank.map(row=>[row.date,row.doc,row.desc,row.infAd||'',row.amount]),[4]),"Solo en Banco");
+  XLSX.utils.book_append_sheet(wb,ms(["Fecha","Comprobante","Descripción","Débito","Crédito","Neto"],r.onlyAux.map(row=>[row.date,row.comp,row.desc,row.debito||0,row.credito||0,row.amount]),[3,4,5]),"Solo en Auxiliar");
+  const diffNet=sumAmt(r.onlyBank)-sumAmt(r.onlyAux),tBN=r.matchedN.reduce((s,g)=>s+g.bankGroup.length,0),tAN=r.matchedN.reduce((s,g)=>s+g.auxGroup.length,0);
+  const wsR=XLSX.utils.aoa_to_sheet([["Métrica","Valor"],["Conciliados 1:1",r.matched1.length],["Grupos N:M",r.matchedN.length],["Mov. banco en grupos",tBN],["Mov. aux en grupos",tAN],["Sin conciliar banco",r.onlyBank.length],["Sin conciliar aux",r.onlyAux.length],["Diferencia neta",diffNet],["Estado",diffNet===0?"CUADRA":"DIFERENCIA"]]);
+  wsR['!cols']=[{wch:30},{wch:16}];XLSX.utils.book_append_sheet(wb,wsR,"Resumen");
+  XLSX.writeFile(wb,`conciliacion_FNHN_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+// ═══════════════════════════════════════
+// MÓDULO CONTABLE
+// ═══════════════════════════════════════
+let contWb=null, contRows=null, contData=null;
+
+const CENTROS={
+  "1":    {cuenta:"1110050300",cont:"Administrativo",cc:1, eAdm:true,  eBcs:false},
+  "1bcs": {cuenta:"1110050500",cont:"BCS FNHN",      cc:1, eAdm:false, eBcs:true },
+  "15":   {cuenta:"1110051100",cont:"991",            cc:15,eAdm:false, eBcs:false},
+  "16":   {cuenta:"1110051200",cont:"1052",           cc:16,eAdm:false, eBcs:false},
+  "17":   {cuenta:"1110051300",cont:"328",            cc:17,eAdm:false, eBcs:false},
+  "18":   {cuenta:"1110051400",cont:"828",            cc:18,eAdm:false, eBcs:false}
+};
+const NIT_BANCO=860007335;
+const NIT_ICBF=899999239;
+
+function ccChange(){
+  const sel=document.getElementById('cc-select');
+  const opt=sel.options[sel.selectedIndex];
+  const cuenta=opt.getAttribute('data-cuenta')||'';
+  document.getElementById('cuenta-banco').value=cuenta;
+  updateContBtn();
+}
+async function loadCont(f){
+  if(!f)return;hideErr('cont-err');
+  try{
+    if(f.name.split('.').pop().toLowerCase()==='txt'){contWb={_txt:await f.text()};}
+    else{contWb=XLSX.read(await f.arrayBuffer(),{type:"array"});}
+    document.getElementById('cont-name').textContent=f.name;
+    document.getElementById('cont-hint').textContent='✓ '+(f.size/1024).toFixed(0)+' KB';
+    document.getElementById('dz-cont').classList.add('done');
+  }catch{showErr('cont-err',"No se pudo leer el extracto.");}
+  updateContBtn();
+}
+function updateContBtn(){
+  const cc=document.getElementById('cc-select').value;
+  const consec=document.getElementById('consecutivo').value;
+  document.getElementById('btn-cont').disabled=!(cc&&consec&&contWb);
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('cc-select').addEventListener('change',updateContBtn);
+  document.getElementById('consecutivo').addEventListener('input',updateContBtn);
+  // Inicializar contratos desde localStorage
+  cfgRenderTabla();
+  cfgReconstruirCentros();
+});
+
+// Detectar GMF y Rendimientos del extracto
+function detectarMovimientos(rows){
+  // IMPORTANTE: se evalúa SOLO la columna Descripción (r.desc).
+  // La columna Inf. Adicional (r.infAd) NO se usa para la detección,
+  // para evitar falsos positivos como "Compra internet" que mencione
+  // rendimientos en la descripción adicional.
+
+  // GMF: "Gravamen movs financieros" y variantes
+  const esGMF=d=>{
+    if(d.includes('gmf'))return true;
+    if(d.includes('4x1000')||d.includes('4 x 1000'))return true;
+    if(d.includes('gravamen'))return true;
+    return false;
+  };
+  // RENDIMIENTOS: "Abono de intereses" y variantes
+  const esRend=d=>{
+    if(d.includes('abono')&&d.includes('interes'))return true;
+    if(d.includes('abono de int'))return true;
+    if(d.includes('rendimiento')||d.includes('rendto')||d.includes('rend fro'))return true;
+    if(d.includes('int ganado')||d.includes('intereses ganados'))return true;
+    if(d.includes('abono')&&d.includes('int'))return true;
+    return false;
+  };
+  const gmf=[],rend=[];
+  for(const r of rows){
+    // *** Solo columna desc — NO incluir infAd ***
+    const d=norm(r.desc);
+    if(esGMF(d))gmf.push(r);
+    else if(esRend(d))rend.push(r);
+  }
+  return{gmf,rend};
+}
+
+function generarContable(){
+  hideErr('cont-err');hideErr('cont-ok');
+  const ccVal=document.getElementById('cc-select').value;
+  const consec=parseInt(document.getElementById('consecutivo').value);
+  if(!ccVal){showErr('cont-err','Selecciona un centro de costo.');return;}
+  if(!consec||consec<1){showErr('cont-err','Ingresa un consecutivo válido.');return;}
+  if(!contWb){showErr('cont-err','Carga el extracto bancario.');return;}
+
+  try{
+    const rows=contWb._txt?parseDaviviendaTxt(contWb._txt):parseBankExcel(contWb,0);
+    const {gmf,rend}=detectarMovimientos(rows);
+
+    if(!gmf.length&&!rend.length){
+      showErr('cont-err','No se encontraron movimientos de GMF ni Abono de intereses en el extracto. Verifica que las descripciones contengan "gravamen", "GMF", "abono de interes" o "rendimiento".');return;
+    }
+
+    const centro=CENTROS[ccVal];
+    // Tomar la última fecha del mes
+    const todasFechas=rows.map(r=>r.date).filter(Boolean).sort();
+    const ultimaFecha=todasFechas[todasFechas.length-1]||new Date().toISOString().slice(0,10);
+    const [anio,mes,dia]=[parseInt(ultimaFecha.slice(0,4)),parseInt(ultimaFecha.slice(5,7)),parseInt(ultimaFecha.slice(8,10))];
+    // Último día del mes
+    const ultimoDia=new Date(anio,mes,0).getDate();
+    const MESES_ESP=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+    const mesNombre=MESES_ESP[mes-1];
+
+    const totalRend=rend.reduce((s,r)=>s+Math.abs(r.amount),0);
+    const gmfBruto=gmf.reduce((s,r)=>s+r.amount,0);
+    const gmfReintegros=gmf.filter(r=>r.amount>0).reduce((s,r)=>s+r.amount,0);
+    const gmfDescuentos=gmf.filter(r=>r.amount<0).reduce((s,r)=>s+Math.abs(r.amount),0);
+    const totalGmf=Math.abs(gmfBruto);
+
+    const contLabel=centro.cont==='Administrativo'?'':` CONT ${centro.cont}`;
+    const descRend=`RENDIMIENTOS FROS MES ${mesNombre} ${anio}${contLabel}`.padEnd(50).slice(0,50);
+    const descGmf=`GMF MES ${mesNombre} ${anio}${contLabel}`.padEnd(50).slice(0,50);
+
+    // NIT según tablas: banco=860007335, ICBF=899999239
+    // CC1 rendimientos: banco D, 4210050500 C — NIT banco en ambas
+    // CC1 GMF: banco C, 5115052000 D — NIT banco en ambas
+    // otros rendimientos: banco D, 2740051000 C — NIT banco / ICBF
+    // otros GMF: banco C, 6165300500 D — NIT banco en ambas
+
+    const filas=[];
+    let secuencia=1;
+
+    // RENDIMIENTOS
+    if(totalRend>0){
+      if(centro.eAdm){
+        // CC1 Administrativo: banco D / 4210050500 C
+        filas.push(makeRow(consec,centro.cuenta,'D',totalRend,anio,mes,ultimoDia,centro.cc,NIT_BANCO,descRend,secuencia++));
+        filas.push(makeRow(consec,'4210050500','C',totalRend,anio,mes,ultimoDia,centro.cc,NIT_BANCO,descRend,secuencia++));
+      }else if(centro.eBcs){
+        // CC1 BCS FNHN: banco D / 4210050500 C — misma lógica, distinta cuenta banco
+        filas.push(makeRow(consec,centro.cuenta,'D',totalRend,anio,mes,ultimoDia,centro.cc,NIT_BANCO,descRend,secuencia++));
+        filas.push(makeRow(consec,'4210050500','C',totalRend,anio,mes,ultimoDia,centro.cc,NIT_BANCO,descRend,secuencia++));
+      }else{
+        // Contratos: banco D / 2740051000 C, NIT banco / ICBF
+        filas.push(makeRow(consec,centro.cuenta,'D',totalRend,anio,mes,ultimoDia,centro.cc,NIT_BANCO,descRend,secuencia++));
+        filas.push(makeRow(consec,'2740051000','C',totalRend,anio,mes,ultimoDia,centro.cc,NIT_ICBF,descRend,secuencia++));
+      }
+    }
+    // GMF
+    if(totalGmf>0&&gmfBruto<0){
+      if(centro.eAdm){
+        // CC1 Administrativo: banco C / 5115052000 D
+        filas.push(makeRow(consec,centro.cuenta,'C',totalGmf,anio,mes,ultimoDia,centro.cc,NIT_BANCO,descGmf,secuencia++));
+        filas.push(makeRow(consec,'5115052000','D',totalGmf,anio,mes,ultimoDia,centro.cc,NIT_BANCO,descGmf,secuencia++));
+      }else if(centro.eBcs){
+        // CC1 BCS FNHN: banco C / 5115200500 D
+        filas.push(makeRow(consec,centro.cuenta,'C',totalGmf,anio,mes,ultimoDia,centro.cc,NIT_BANCO,descGmf,secuencia++));
+        filas.push(makeRow(consec,'5115200500','D',totalGmf,anio,mes,ultimoDia,centro.cc,NIT_BANCO,descGmf,secuencia++));
+      }else{
+        // Contratos: banco C / 6165300500 D
+        filas.push(makeRow(consec,centro.cuenta,'C',totalGmf,anio,mes,ultimoDia,centro.cc,NIT_BANCO,descGmf,secuencia++));
+        filas.push(makeRow(consec,'6165300500','D',totalGmf,anio,mes,ultimoDia,centro.cc,NIT_BANCO,descGmf,secuencia++));
+      }
+    }
+
+    contData={filas,totalRend,totalGmf,gmfDescuentos,gmfReintegros,rend,gmf,anio,mes:mesNombre,ultimoDia,centro,consec,descRend,descGmf};
+    mostrarPreviewContable(contData);
+  }catch(e){showErr('cont-err',e.message);}
+}
+
+function makeRow(consec,cuenta,dc,valor,anio,mes,dia,cc,nit,desc,seq){
+  // 62 columnas exactas del modelo
+  return [
+    'L',          // A: TIPO COMPROBANTE
+    7,            // B: CÓDIGO COMPROBANTE
+    consec,       // C: NÚMERO DOCUMENTO
+    cuenta,       // D: CUENTA CONTABLE
+    dc,           // E: DÉBITO O CRÉDITO
+    valor,        // F: VALOR SECUENCIA
+    anio,         // G: AÑO
+    mes,          // H: MES
+    dia,          // I: DÍA
+    1,            // J: CÓDIGO VENDEDOR
+    670,          // K: CÓDIGO CIUDAD
+    0,            // L: CÓDIGO ZONA
+    seq,          // M: SECUENCIA
+    cc,           // N: CENTRO COSTO
+    0,            // O: SUBCENTRO
+    nit,          // P: NIT
+    0,            // Q: SUCURSAL
+    desc,         // R: DESCRIPCIÓN
+    0,            // S: NRO CHEQUE
+    'N',          // T: ANULADO
+    0,            // U: MOTIVO DEV
+    0,            // V: FORMA PAGO
+    0,            // W: CARGO 1
+    0,            // X: CARGO 2
+    0,            // Y: DESCUENTO 1
+    0,            // Z: DESCUENTO 2
+    0,            // AA: DESCUENTO 3
+    '     ',      // AB: FAC ELEC
+    0,            // AC: NRO FAC ELEC
+    '          ', // AD: PREFIJO ORDER
+    '                                        ',// AE: CONSEC ORDER
+    '          ', // AF: PREF ENT
+    '                                        ',// AG: NRO ENT
+    0,0,0,        // AH,AI,AJ: AÑO/MES/DIA ENT
+    ' ',          // AK: ING TERCEROS
+    0,            // AL: FECHA ACT
+    0,            // AM: HORA ACT
+    '          ','                                        ',0,0,0, // ENT2
+    '          ','                                        ',0,0,0, // ENT3
+    '          ','                                        ',0,0,0, // ENT4
+    '          ','                                        ',0,0,0, // ENT5
+    0,            // BH: % ALIMENTOS
+    0,            // BI: VALOR ALIMENTOS
+    0             // BJ: BEBIDAS
+  ];
+}
+
+function mostrarPreviewContable(d){
+  // Summary
+  document.getElementById('cont-summary').innerHTML=`
+    <h3>📊 Resumen del movimiento contable — ${d.mes} ${d.anio}</h3>
+    <div class="summary-row"><span>Centro de costo</span><span><strong>${d.centro.cc} - ${d.centro.cont==='Administrativo'?'Administrativo':'Contrato '+d.centro.cont}</strong></span></div>
+    <div class="summary-row"><span>Cuenta bancaria</span><span><strong>${d.centro.cuenta}</strong></span></div>
+    <div class="summary-row"><span>Consecutivo comprobante</span><span><strong>${d.consec}</strong></span></div>
+    <div class="summary-row"><span>Fecha de contabilización</span><span><strong>${d.ultimoDia}/${String(d.anio).slice(2)} — último día del mes</strong></span></div>
+    ${d.totalRend>0?`<div class="summary-row"><span>🟢 Rendimientos financieros (${d.rend.length} movs.)</span><span class="green"><strong>${fmt(d.totalRend)}</strong></span></div>`:''}
+    ${d.gmf.length>0?`
+      <div class="summary-row"><span>🟡 GMF cargos (${d.gmf.filter(r=>r.amount<0).length} movs.)</span><span class="amber"><strong>- ${fmt(d.gmfDescuentos)}</strong></span></div>
+      ${d.gmfReintegros>0?`<div class="summary-row"><span>🔵 GMF reintegros (${d.gmf.filter(r=>r.amount>0).length} movs.)</span><span style="color:#2563eb"><strong>+ ${fmt(d.gmfReintegros)}</strong></span></div>
+      <div class="summary-row"><span>🟡 GMF <strong>neto a contabilizar</strong></span><span class="amber"><strong>${fmt(d.totalGmf)}</strong></span></div>`:''}`:''}
+    <div class="summary-row"><span>Total filas a importar</span><span><strong>${d.filas.length} filas</strong></span></div>`;
+
+  // Tabla preview (columnas principales)
+  let h=`<table><thead><tr>
+    <th>Tipo</th><th>Cód Comp.</th><th>Nro Doc.</th><th>Cuenta Contable</th>
+    <th>D/C</th><th>Valor</th><th>Año</th><th>Mes</th><th>Día</th>
+    <th>Centro Costo</th><th>NIT</th><th>Descripción</th><th>Secuencia</th>
+  </tr></thead><tbody>`;
+  for(const f of d.filas){
+    const esRend=f[4]==='D'&&(f[3]===d.centro.cuenta)||f[4]==='C'&&f[3]!==d.centro.cuenta&&f[12]<=2;
+    const cls=f[13]===d.centro.cc&&(f[4]==='D'&&f[12]%2===1&&d.totalRend>0)?'rend-row':f[4]==='C'&&f[3]===d.centro.cuenta&&d.totalGmf>0?'gmf-row':
+              f[12]%2===0&&d.totalRend>0&&f[12]<=2*((d.totalRend>0?1:0)+(d.totalGmf>0?1:0))*1?'rend-row':'gmf-row';
+    h+=`<tr class="${cls}">
+      <td>${f[0]}</td><td>${f[1]}</td><td>${f[2]}</td>
+      <td style="font-weight:600">${f[3]}</td>
+      <td style="font-weight:700;color:${f[4]==='D'?'#0d9e6e':'#d63b3b'}">${f[4]}</td>
+      <td style="font-weight:600">${fmt(f[5])}</td>
+      <td>${f[6]}</td><td>${f[7]}</td><td>${f[8]}</td>
+      <td>${f[13]}</td><td>${f[15]}</td>
+      <td style="font-size:10px;color:#555">${f[17].trim()}</td>
+      <td>${f[12]}</td>
+    </tr>`;
+  }
+  h+=`</tbody></table>`;
+  document.getElementById('cont-tbl').innerHTML=h;
+  document.getElementById('cont-preview').style.display='block';
+}
+
+function exportarContable(){
+  if(!contData)return;
+  const {filas,anio,mes,ultimoDia,centro,consec}=contData;
+  const XLSX_=window.XLSX;
+  const wb=XLSX_.utils.book_new();
+  const ws=XLSX_.utils.aoa_to_sheet([]);
+
+  // ── Filas de encabezado igual al modelo ──
+  const mesAbrev=mes.slice(0,3);
+  const diaStr=String(ultimoDia).padStart(2,'0');
+  const mesNum=String(['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'].indexOf(mes)+1).padStart(2,'0');
+
+  XLSX_.utils.sheet_add_aoa(ws,[
+    ['A.U.P.H.C.B. NUEVO HORIZONTE'],
+    ['MODELO PARA LA IMPORTACION DE MOVIMIENTO CONTABLE - MODELO GENERAL'],
+    [`De :  ${mesAbrev} ${diaStr}/${anio}   A :  ${mesAbrev} ${diaStr}/${anio}`],
+    [null],
+  ],{origin:'A1'});
+
+  // Headers fila 5
+  const headers=[
+    'TIPO DE COMPROBANTE (OBLIGATORIO)','CÓDIGO COMPROBANTE  (OBLIGATORIO)','NÚMERO DE DOCUMENTO',
+    'CUENTA CONTABLE   (OBLIGATORIO)','DÉBITO O CRÉDITO (OBLIGATORIO)','VALOR DE LA SECUENCIA   (OBLIGATORIO)',
+    'AÑO DEL DOCUMENTO','MES DEL DOCUMENTO','DÍA DEL DOCUMENTO','CÓDIGO DEL VENDEDOR','CÓDIGO DE LA CIUDAD',
+    'CÓDIGO DE LA ZONA','SECUENCIA','CENTRO DE COSTO','SUBCENTRO DE COSTO','NIT','SUCURSAL',
+    'DESCRIPCIÓN DE LA SECUENCIA','NÚMERO DE CHEQUE','COMPROBANTE ANULADO','CÓDIGO DEL MOTIVO DE DEVOLUCIÓN',
+    'FORMA DE PAGO','VALOR DEL CARGO 1 DE LA SECUENCIA','VALOR DEL CARGO 2 DE LA SECUENCIA',
+    'VALOR DEL DESCUENTO 1 DE LA SECUENCIA','VALOR DEL DESCUENTO 2 DE LA SECUENCIA',
+    'VALOR DEL DESCUENTO 3 DE LA SECUENCIA','FACTURA ELECTRÓNICA A DEBITAR/ACREDITAR',
+    'NÚMERO DE FACTURA ELECTRÓNICA A DEBITAR/ACREDITAR','PREFIJO DE ORDER REFERENCE',
+    'CONSECUTIVO DE ORDER REFERENCE','PREFIJO ORDEN DE ENTREGA','NÚMERO ORDEN DE ENTREGA',
+    'AÑO FECHA DE ORDEN DE ENTREGA','MES FECHA DE ORDEN DE ENTREGA','DÍA FECHA DE ORDEN DE ENTREGA',
+    'INGRESOS PARA TERCEROS','FECHA ACTUALIZACIÓN DEL DOCUMENTO','HORA DE ACTUALIZACIÓN DEL DOCUMENTO',
+    'PREFIJO ORDEN DE ENTREGA2','NÚMERO ORDEN DE ENTREGA2','AÑO FECHA DE ORDEN DE ENTREGA2',
+    'MES FECHA DE ORDEN DE ENTREGA2','DÍA FECHA DE ORDEN DE ENTREGA2','PREFIJO ORDEN DE ENTREGA3',
+    'NÚMERO ORDEN DE ENTREGA3','AÑO FECHA DE ORDEN DE ENTREGA3','MES FECHA DE ORDEN DE ENTREGA3',
+    'DÍA FECHA DE ORDEN DE ENTREGA3','PREFIJO ORDEN DE ENTREGA4','NÚMERO ORDEN DE ENTREGA4',
+    'AÑO FECHA DE ORDEN DE ENTREGA4','MES FECHA DE ORDEN DE ENTREGA4','DÍA FECHA DE ORDEN DE ENTREGA4',
+    'PREFIJO ORDEN DE ENTREGA5','NÚMERO ORDEN DE ENTREGA5','AÑO FECHA DE ORDEN DE ENTREGA5',
+    'MES FECHA DE ORDEN DE ENTREGA5','DÍA FECHA DE ORDEN DE ENTREGA5',
+    'PORCENTAJE ALIMENTOS ULTRAPROCESADOS','VALOR ALIMENTOS ULTRAPROCESADOS','VALOR BEBIDAS AZUCARADAS'
+  ];
+  XLSX_.utils.sheet_add_aoa(ws,[headers],{origin:'A5'});
+
+  // Datos desde fila 6
+  XLSX_.utils.sheet_add_aoa(ws,filas,{origin:'A6'});
+
+  // Anchos de columna exactos del modelo
+  const colWidths=[43.28,17.57,27.28,39.57,38.28,45.85,24,23.85,23.28,26,24.85,22.57,13.14,20.42,24.71,13.57,12,57.28,22.71,27.71,41,18.28,41.71,47,47,47,47,50.85,63.85,33.57,40,31,63.85,33.57,40,31,29.28,44.57,46.71,32.42,32.57,39.28,39.14,38.57,32.42,32.57,39.28,39.14,38.57,32.42,32.57,39.28,39.14,38.57,32.42,32.57,39.28,39.14,38.57,48.71,42.28,32.85];
+  ws['!cols']=colWidths.map(w=>({wch:w}));
+
+  // Merge filas 1-4
+  ws['!merges']=[
+    {s:{r:0,c:0},e:{r:0,c:61}},
+    {s:{r:1,c:0},e:{r:1,c:61}},
+    {s:{r:2,c:0},e:{r:2,c:61}},
+    {s:{r:3,c:0},e:{r:3,c:61}},
+  ];
+
+  // Formatos numéricos exactos del modelo
+  const numFmtInt='##,##0_);[Red]\\(##,##0\\)';
+  const numFmtDec='##,##0.00_);[Red]\\(##,##0.00\\)';
+  const numFmt5='##,##0.00000_);[Red]\\(##,##0.00000\\)';
+  // Columnas con formato entero (0-indexed): B=1,H=7,I=8,J=9,K=10,L=11,M=12,N=13,O=14,P=15,Q=16,S=18,U=20,AI=34,AJ=35
+  const intCols=[1,7,8,9,10,11,12,13,14,15,16,18,20,34,35,40,41,43,44,45,47,48,50,51,52,54,55,57,58];
+  const decCols=[5,22,23,24,25,26]; // F,W,X,Y,Z,AA
+  const dec5Cols=[59,60,61]; // BH,BI,BJ
+
+  for(let row=5;row<5+filas.length;row++){
+    for(const c of intCols){
+      const addr=XLSX_.utils.encode_cell({r:row,c});
+      if(ws[addr])ws[addr].z=numFmtInt;
+    }
+    for(const c of decCols){
+      const addr=XLSX_.utils.encode_cell({r:row,c});
+      if(ws[addr])ws[addr].z=numFmtDec;
+    }
+    for(const c of dec5Cols){
+      const addr=XLSX_.utils.encode_cell({r:row,c});
+      if(ws[addr])ws[addr].z=numFmt5;
+    }
+  }
+  // Formato F (valor) en header row también
+  ['F5'].forEach(addr=>{if(ws[addr])ws[addr].z=numFmtDec;});
+
+  XLSX_.utils.book_append_sheet(wb,ws,'Hoja1');
+  XLSX_.writeFile(wb,`importacion_siigo_${centro.cont}_${anio}${String(['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'].indexOf(mes)+1).padStart(2,'0')}.xlsx`);
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// MÓDULO 3 — CONTABILIZACIÓN FACTURAS ELECTRÓNICAS (Doc P)
+// ═══════════════════════════════════════════════════════════
+// REGLAS:
+// - Alimentos: IVA como mayor valor del costo (una sola cuenta, subtotal+IVA)
+// - Todos los demás con IVA: cuenta costo = subtotal, cuenta IVA separada
+// - Pasivo 2435050500: total completo (subtotal + IVA) siempre
+// - NIT 901679250 → nombre fijo "FNHN"
+
+// ── Tabla de grupos PUC ──
+// ivaEnCosto=true  → IVA incluido en cuenta costo (alimentos)
+// ivaEnCosto=false → IVA en cuenta separada (todos los demás)
+const GRUPOS_PUC = [
+  {id:'alim_exc',      pref:'ALIM EXC',      cuenta:'6165150500', cuentaIva:null,       iva:0,  ivaEnCosto:true,  tipo:'alimentos'},
+  {id:'alim_g5',       pref:'ALIM GRAV 5%',  cuenta:'6165151000', cuentaIva:'6165151100',iva:5,  ivaEnCosto:false, tipo:'alimentos'},
+  {id:'alim_g19',      pref:'ALIM GRAV 19%', cuenta:'6165151500', cuentaIva:'6165151600',iva:19, ivaEnCosto:false, tipo:'alimentos'},
+  {id:'aseo_inst_exc', pref:'ASEO INST EXC', cuenta:'6165550500', cuentaIva:null,       iva:0,  ivaEnCosto:false, tipo:'aseo_inst'},
+  {id:'aseo_inst_g19', pref:'ASEO INST',     cuenta:'6165551000', cuentaIva:'6165551100',iva:19, ivaEnCosto:false, tipo:'aseo_inst'},
+  {id:'aseo_pers_exc', pref:'ASEO PERS EXC', cuenta:'6165551500', cuentaIva:null,       iva:0,  ivaEnCosto:false, tipo:'aseo_pers'},
+  {id:'aseo_pers_g19', pref:'ASEO PERS',     cuenta:'6165552000', cuentaIva:'6165552100',iva:19, ivaEnCosto:false, tipo:'aseo_pers'},
+  {id:'papel_exc',     pref:'PAPELERIA EXC', cuenta:'6165201000', cuentaIva:null,       iva:0,  ivaEnCosto:false, tipo:'papeleria'},
+  {id:'papel_g19',     pref:'PAPELERIA',     cuenta:'6165200500', cuentaIva:'6165200600',iva:19, ivaEnCosto:false, tipo:'papeleria'},
+  {id:'gas_op_exc',    pref:'GASTO OPER EXC',cuenta:'6165300500', cuentaIva:null,       iva:0,  ivaEnCosto:false, tipo:'gasto_op'},
+  {id:'gas_op_g19',    pref:'GASTO OPER',    cuenta:'6165301000', cuentaIva:'6165300600',iva:19, ivaEnCosto:false, tipo:'gasto_op'},
+  {id:'internet',      pref:'INTERNET',      cuenta:'6165451500', cuentaIva:'6165451600',iva:19, ivaEnCosto:false, tipo:'internet'},
+  {id:'gas_serv',      pref:'GAS',           cuenta:'6165452000', cuentaIva:null,       iva:0,  ivaEnCosto:false, tipo:'gas'},
+  {id:'dotacion',      pref:'DOTACION',      cuenta:'6165600500', cuentaIva:null,       iva:0,  ivaEnCosto:false, tipo:'dotacion'},
+  {id:'polizas',       pref:'POLIZAS',       cuenta:'6165350500', cuentaIva:null,       iva:0,  ivaEnCosto:false, tipo:'polizas'},
+  {id:'bolsas',        pref:'BOLSAS RPP',    cuenta:'6165150600', cuentaIva:null,       iva:0,  ivaEnCosto:true,  tipo:'bolsas'},
+];
+
+// ── Centros de costo ──
+const FAC_CENTROS = {
+  '1': {cc:1,  contNum:'',    label:'Administrativo'},
+  '15':{cc:15, contNum:'991', label:'HCB SAMA'},
+  '16':{cc:16, contNum:'1052',label:'HCB BUES'},
+  '17':{cc:17, contNum:'328', label:'CDI SANTAC'},
+  '18':{cc:18, contNum:'828', label:'CONT 828'},
+};
+
+// ── Palabras clave CC desde nota ──
+const CC_KW = [
+  {kw:['991','samaniego','hcb sama'],              cc:'15'},
+  {kw:['1052','buesaco','hcb bues'],               cc:'16'},
+  {kw:['328','santacruz','santa cruz','cdi santac'],cc:'17'},
+  {kw:['828','llanada','santacruz-la llanada'],     cc:'18'},
+];
+
+// ── Patrones nota → concepto ──
+const NOTA_PATRONES = [
+  {re:/raci[oó]n\s*servida/i,      tag:'RAC SERVIDA', tipo:'alimentos'},
+  {re:/rpp\s*fami/i,               tag:'RPP FAMI',    tipo:'alimentos'},
+  {re:/hcb\s*fami/i,               tag:'HCB FAMI',    tipo:'alimentos'},
+  {re:/hcb\s*trad/i,               tag:'HCB TRAD',    tipo:'alimentos'},
+  {re:/material\s*did[aá]ctico/i,  tag:'MAT DIDAC',   tipo:'papeleria'},
+  {re:/papeler[ií]a/i,             tag:'PAPELERIA',   tipo:'papeleria'},
+  {re:/aseo\s*personal/i,          tag:'ASEO PERS',   tipo:'aseo_pers'},
+  {re:/aseo\s*inst/i,              tag:'ASEO INST',   tipo:'aseo_inst'},
+  {re:/aseo\s*industrial/i,        tag:'ASEO INST',   tipo:'aseo_inst'},
+  {re:/elementos\s*de\s*aseo/i,    tag:'ASEO INST',   tipo:'aseo_inst'},
+  {re:/alimento/i,                 tag:'ALIMENTOS',   tipo:'alimentos'},
+  {re:/internet/i,                 tag:'INTERNET',    tipo:'internet'},
+  {re:/gas/i,                      tag:'GAS',         tipo:'gas'},
+  {re:/p[oó]liza/i,                tag:'POLIZAS',     tipo:'polizas'},
+  {re:/dotaci[oó]n/i,              tag:'DOTACION',    tipo:'dotacion'},
+];
+
+const MES_ABR=['','ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+const MES_NOMBRES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+function abreviarMes(nota){
+  const n=(nota||'').toLowerCase();
+  for(let i=0;i<MES_NOMBRES.length;i++) if(n.includes(MES_NOMBRES[i])) return MES_ABR[i+1];
+  return '';
+}
+function detectarSubtipo(nota){
+  const n=nota||'';
+  if(/hcb\s*fami/i.test(n)) return 'HCB FAMI';
+  if(/hcb\s*trad/i.test(n)) return 'HCB TRAD';
+  if(/rpp\s*fami/i.test(n)) return 'RPP FAMI';
+  if(/raci[oó]n\s*servida/i.test(n)) return 'RAC SERVIDA';
+  if(/material\s*did[aá]ctico/i.test(n)) return 'MAT DIDAC';
+  return '';
+}
+function detectarTipoNota(nota){
+  if(!nota) return null;
+  const p=NOTA_PATRONES.find(pt=>pt.re.test(nota));
+  return p?p.tipo:null;
+}
+function detectarCCdesdNota(nota){
+  if(!nota) return null;
+  const n=norm(nota);
+  for(const {kw,cc} of CC_KW) if(kw.some(k=>n.includes(norm(k)))) return cc;
+  return null;
+}
+
+// Detección tipo ítem por palabras clave
+const KW_ITEMS = {
+  aseo_pers:['crema dental','cepillo dental','pañito','pañal','champu','shampoo',
+    'acondicionador','jabon de tocador','jabon corporal','jabon bebe','toalla higienica',
+    'toalla sanitaria','protector diario','desodorante','crema humectante',
+    'pañitos humedos','locion','pasta dental'],
+  aseo_inst:['detergente','desinfectante','escoba','recogedor','trapero','trapeador','balde',
+    'cepillo de baño','limpido','hipoclorito','guantes de lavar','guantes industriales',
+    'esponja','estropajo','limpiones','limpion','microfibra','ambientador','insecticida',
+    'quitagrasas','jabon para loza','jabon loza','lavaloza','jabon rey',
+    'detergente en polvo','bolsa basura','bolsa de basura','bolsas de basura',
+    'bolsas plasticas','bolsas negras','bolsas blancas','bolsas verdes',
+    'toalla papel','papel higienico','servilletas','guantes de nitrilo','gorros desechables',
+    'toallas desechables'],
+  papeleria:['resma','papel carta','papel oficio','cuaderno','lapiz','boligrafo',
+    'esfero','marcador','corrector','folder','carpeta','archivador','toner',
+    'cartucho','tinta','cinta de enmascarar','cinta de empaque','papel seda',
+    'papel bon','carpetas','tintas impresora'],
+  internet: ['internet','plan datos','fibra optica'],
+  gas:      ['gas natural','gas propano','cilindro de gas'],
+};
+
+function detectarTipoItem(descItem){
+  const d=norm(descItem);
+  for(const [tipo,kws] of Object.entries(KW_ITEMS))
+    if(kws.some(k=>d.includes(norm(k)))) return tipo;
+  return 'alimentos';
+}
+
+function grupoId(tipo, ivaPct){
+  if(tipo==='alimentos') return ivaPct===5?'alim_g5':ivaPct===19?'alim_g19':'alim_exc';
+  if(tipo==='aseo_inst') return ivaPct>0?'aseo_inst_g19':'aseo_inst_exc';
+  if(tipo==='aseo_pers') return ivaPct>0?'aseo_pers_g19':'aseo_pers_exc';
+  if(tipo==='papeleria') return ivaPct>0?'papel_g19':'papel_exc';
+  if(tipo==='internet')  return 'internet';
+  if(tipo==='gas')       return 'gas_serv';
+  return ivaPct>0?'gas_op_g19':'gas_op_exc';
+}
+
+function extraerNumBL(idFac){
+  const d=(idFac||'').replace(/\D/g,'');
+  return d?parseInt(d.slice(-11)):0;
+}
+
+// Nombre proveedor corto — NIT 901679250 siempre = FNHN
+function nombreCorto(nombreProv, nitProv){
+  if((nitProv||'').replace(/\D/g,'').startsWith('901679250')) return 'FNHN';
+  return (nombreProv||'')
+    .replace(/fundacion|nuevo|horizonte|nari[ñn]o|colombia|sociedad/gi,'')
+    .replace(/\b(sas|s\.a\.s|ltda|s\.a|e\.s\.p)\b/gi,'')
+    .replace(/\s+/g,' ').trim().slice(0,15).toUpperCase();
+}
+
+// ── Construir descripciones ──
+function construirDescCosto(nota, numFacCorto, contNum, grupoPref){
+  if(nota && nota.trim()){
+    const patron=NOTA_PATRONES.find(p=>p.re.test(nota));
+    const tag=patron?patron.tag:grupoPref;
+    const subtipo=detectarSubtipo(nota);
+    const mes=abreviarMes(nota);
+    const partes=[tag];
+    if(subtipo&&subtipo!==tag) partes.push(subtipo);
+    if(mes) partes.push(mes);
+    if(contNum) partes.push('CONT '+contNum);
+    return partes.join(' ').slice(0,40).toUpperCase();
+  }
+  return (grupoPref+' VARIOS FAC '+numFacCorto+' CONT '+contNum).slice(0,40).toUpperCase();
+}
+
+function construirDescIva(nota, numFacCorto, contNum, grupoPref){
+  // IVA [CONCEPTO] [MES] CONT [NUM]
+  if(nota && nota.trim()){
+    const patron=NOTA_PATRONES.find(p=>p.re.test(nota));
+    const tag=patron?patron.tag:grupoPref;
+    const mes=abreviarMes(nota);
+    const partes=['IVA',tag];
+    if(mes) partes.push(mes);
+    if(contNum) partes.push('CONT '+contNum);
+    return partes.join(' ').slice(0,40).toUpperCase();
+  }
+  return ('IVA '+grupoPref+' FAC '+numFacCorto+' CONT '+contNum).slice(0,40).toUpperCase();
+}
+
+function construirDescPasivo(nombreProv, nitProv, nota, numBL, contNum){
+  const prov=nombreCorto(nombreProv, nitProv);
+  let tag='';
+  if(nota && nota.trim()){
+    const patron=NOTA_PATRONES.find(p=>p.re.test(nota));
+    if(patron) tag=patron.tag;
+    const subtipo=detectarSubtipo(nota);
+    if(subtipo&&subtipo!==tag) tag=subtipo;
+  }
+  const partes=[prov];
+  if(tag) partes.push(tag);
+  partes.push('FAC '+numBL);
+  if(contNum) partes.push('CONT '+contNum);
+  return partes.join(' ').slice(0,40).toUpperCase();
+}
+
+// ── Parser XML ──
+function parsearXMLFac(xmlText){
+  const parser=new DOMParser();
+  const doc=parser.parseFromString(xmlText,'text/xml');
+  const NS_CAC='urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2';
+  const NS_CBC='urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2';
+  function qt(node,tag){const el=node.getElementsByTagNameNS(NS_CBC,tag)[0];return el?el.textContent.trim():null;}
+
+  let invDoc=doc;
+  const descEl=doc.getElementsByTagNameNS(NS_CBC,'Description')[0];
+  if(descEl) invDoc=parser.parseFromString(descEl.textContent.trim(),'text/xml');
+  const inv=invDoc.documentElement;
+
+  const numFacRaw=(()=>{
+    // Buscar ID directo en Invoice
+    const idEl=inv.getElementsByTagNameNS(NS_CBC,'ID')[0];
+    if(idEl&&idEl.textContent.trim()) return idEl.textContent.trim();
+    // Fallback: buscar en ParentDocumentLineReference del AttachedDocument
+    const refs=doc.getElementsByTagNameNS(NS_CAC,'ParentDocumentLineReference');
+    if(refs[0]){
+      const docRef=refs[0].getElementsByTagNameNS(NS_CAC,'DocumentReference')[0];
+      if(docRef){const rid=docRef.getElementsByTagNameNS(NS_CBC,'ID')[0];if(rid)return rid.textContent.trim();}
+    }
+    return '';
+  })();
+  const fecha=(()=>{
+    const el=inv.getElementsByTagNameNS(NS_CBC,'IssueDate')[0];
+    return el?el.textContent.trim():'';
+  })();
+  const nota=(()=>{
+    const noteEl=inv.getElementsByTagNameNS(NS_CBC,'Note')[0];
+    return noteEl?noteEl.textContent.trim():'';
+  })();
+
+  // ── Proveedor ──
+  let nitProv='',nombreProv='';
+  const supArr=invDoc.getElementsByTagNameNS(NS_CAC,'AccountingSupplierParty');
+  if(supArr[0]){
+    const pts=supArr[0].getElementsByTagNameNS(NS_CAC,'PartyTaxScheme');
+    if(pts[0]){nitProv=qt(pts[0],'CompanyID')||'';nombreProv=qt(pts[0],'RegistrationName')||'';}
+    if(!nombreProv){const ple=supArr[0].getElementsByTagNameNS(NS_CAC,'PartyLegalEntity');if(ple[0])nombreProv=qt(ple[0],'RegistrationName')||'';}
+  }
+
+  // ── Total ──
+  const lmt=invDoc.getElementsByTagNameNS(NS_CAC,'LegalMonetaryTotal')[0];
+  const totalPagar=lmt?parseFloat(qt(lmt,'PayableAmount')||'0'):0;
+
+  // ── Receptor (AccountingCustomerParty) ──
+  const NIT_VALIDOS = ['800078357','901679250'];
+  const KW_RECEPTOR = ['horizonte','nuevo horizonte','auphcb','fnhn','fundacion','asociacion','bienestar'];
+  let nitReceptor='', nombreReceptor='', alertaNit=false, alertaNombre=false;
+  const custArr=invDoc.getElementsByTagNameNS(NS_CAC,'AccountingCustomerParty');
+  if(custArr[0]){
+    const pts=custArr[0].getElementsByTagNameNS(NS_CAC,'PartyTaxScheme');
+    if(pts[0]){
+      nitReceptor=(pts[0].getElementsByTagNameNS(NS_CBC,'CompanyID')[0]||{}).textContent||'';
+      nombreReceptor=(pts[0].getElementsByTagNameNS(NS_CBC,'RegistrationName')[0]||{}).textContent||'';
+    }
+    if(!nombreReceptor){
+      const ple=custArr[0].getElementsByTagNameNS(NS_CAC,'PartyLegalEntity');
+      if(ple[0]) nombreReceptor=(ple[0].getElementsByTagNameNS(NS_CBC,'RegistrationName')[0]||{}).textContent||'';
+    }
+  }
+  const nitLimpio=(nitReceptor||'').replace(/\D/g,'').slice(0,9);
+  alertaNit = nitLimpio.length>0 && !NIT_VALIDOS.includes(nitLimpio);
+  const nomNorm=norm(nombreReceptor||'');
+  alertaNombre = nombreReceptor.length>0 && !KW_RECEPTOR.some(k=>nomNorm.includes(norm(k)));
+
+  const lineas=[];
+  const invLines=invDoc.getElementsByTagNameNS(NS_CAC,'InvoiceLine');
+  for(let i=0;i<invLines.length;i++){
+    const line=invLines[i];
+    const itemEl=line.getElementsByTagNameNS(NS_CAC,'Item')[0];
+    const descItem=itemEl?qt(itemEl,'Description')||'':'';
+    const subtotal=parseFloat(qt(line,'LineExtensionAmount')||'0');
+    let ivaPct=0,ivaMonto=0;
+    const tt=line.getElementsByTagNameNS(NS_CAC,'TaxTotal')[0];
+    if(tt){
+      const ts=tt.getElementsByTagNameNS(NS_CAC,'TaxSubtotal')[0];
+      if(ts){
+        const tc=ts.getElementsByTagNameNS(NS_CAC,'TaxCategory')[0];
+        if(tc)ivaPct=parseFloat(qt(tc,'Percent')||'0');
+        ivaMonto=parseFloat(qt(ts,'TaxAmount')||'0');
+      }
+    }
+    lineas.push({desc:descItem,subtotal,ivaPct,ivaMonto});
+  }
+  return{numFacRaw,numBL:extraerNumBL(numFacRaw),numFacCorto:(numFacRaw.replace(/\D/g,'')||numFacRaw),fecha,nota,nitProv,nombreProv,totalPagar,lineas,nitReceptor,nombreReceptor,alertaNit,alertaNombre};
+}
+
+// ── Agrupar líneas por naturaleza+tarifa ──
+function agruparLineas(lineas, tipoFacNota){
+  const grupos={};
+  for(const lin of lineas){
+    const tipo=tipoFacNota||detectarTipoItem(lin.desc);
+    const gid=grupoId(tipo,lin.ivaPct);
+    const gDef=GRUPOS_PUC.find(g=>g.id===gid);
+    if(!gDef) continue;
+    if(!grupos[gid]) grupos[gid]={gid,cuenta:gDef.cuenta,cuentaIva:gDef.cuentaIva,pref:gDef.pref,ivaEnCosto:gDef.ivaEnCosto,subtotal:0,ivaAcum:0,duda:false};
+    grupos[gid].subtotal+=lin.subtotal;
+    grupos[gid].ivaAcum+=lin.ivaMonto;
+  }
+  // Calcular valorDebito y validar IVA
+  for(const[gid,g] of Object.entries(grupos)){
+    const gDef=GRUPOS_PUC.find(x=>x.id===gid);
+    if(gDef&&gDef.iva>0&&g.ivaAcum>0){
+      const baseCalc=Math.round(g.ivaAcum*100/gDef.iva*100)/100;
+      if(Math.abs(baseCalc-Math.round(g.subtotal*100)/100)>1)
+        g.alertaIva='⚠️ IVA: base XML='+g.subtotal.toFixed(0)+', calc='+baseCalc.toFixed(0);
+    }
+    // valorDebitoCosto: si ivaEnCosto → subtotal+IVA; si no → solo subtotal
+    g.valorDebitoCosto=g.ivaEnCosto
+      ?Math.round((g.subtotal+g.ivaAcum)*100)/100
+      :Math.round(g.subtotal*100)/100;
+    g.valorDebitoIva=Math.round(g.ivaAcum*100)/100;
+  }
+  return grupos;
+}
+
+// ── Estado del módulo ──
+let facArchivos=[],facFacturas=[];
+
+function facUpdateBtn(){
+  const consec=document.getElementById('fac-consec').value;
+  document.getElementById('btn-fac-procesar').disabled=!(consec&&facArchivos.length);
+  const acumRow=document.getElementById('fac-acum-row');
+  const totalEl=document.getElementById('fac-total-acumulado');
+  if(acumRow&&totalEl){
+    if(facArchivos.length>0){acumRow.style.display='flex';totalEl.textContent='📂 Lote acumulado: '+facArchivos.length+' XML(s)';}
+    else{acumRow.style.display='none';}
+  }
+}
+function facLimpiarLote(){
+  if(!confirm('¿Limpiar el lote acumulado? Se eliminarán todos los archivos cargados.'))return;
+  facArchivos=[];facFacturas=[];
+  document.getElementById('fac-list').style.display='none';
+  document.getElementById('fac-list').innerHTML='';
+  document.getElementById('fac-fecha-alerta').style.display='none';
+  document.getElementById('fac-tabla-wrap').style.display='none';
+  document.getElementById('fac-err').style.display='none';
+  document.getElementById('fac-warn').style.display='none';
+  facUpdateBtn();
+}
+function facDzOv(e){e.preventDefault();document.getElementById('fac-dz').classList.add('drag');}
+function facDzLv(){document.getElementById('fac-dz').classList.remove('drag');}
+function facDzDp(e){e.preventDefault();facDzLv();facCargarArchivos(e.dataTransfer.files);}
+
+async function facCargarArchivos(files){
+  if(!files||!files.length)return;
+  const listEl=document.getElementById('fac-list');
+  listEl.style.display='flex';
+  // NO limpiar facArchivos — acumular para permitir múltiples cargues
+  // (se limpia solo con el botón reset o al iniciar módulo)
+  const nombresExistentes=new Set(facArchivos.map(x=>x.nombre));
+  for(const file of files){
+    const ext=file.name.split('.').pop().toLowerCase();
+    const item=document.createElement('div');item.className='fac-item';
+    if(ext==='xml'){
+      if(nombresExistentes.has(file.name)){
+        item.innerHTML='<span style="font-size:16px">⚠️</span><span class="fac-item-name">'+file.name+'</span><span class="fac-item-status status-warn">Duplicado — omitido</span>';
+      }else{
+        const txt=await file.text();
+        facArchivos.push({nombre:file.name,xml:txt});
+        nombresExistentes.add(file.name);
+        item.innerHTML='<span style="font-size:16px">📄</span><span class="fac-item-name">'+file.name+'</span><span class="fac-item-status status-ok">XML ✓</span>';
+      }
+    }else if(ext==='zip'){
+      try{
+        const xmls=await extraerXMLsDeZip(await file.arrayBuffer());
+        let nuevos=0,dups=0;
+        for(const x of xmls){
+          if(nombresExistentes.has(x.nombre)){dups++;}
+          else{facArchivos.push(x);nombresExistentes.add(x.nombre);nuevos++;}
+        }
+        const dupTxt=dups>0?` · <b>${dups} dup. omitido(s)</b>`:'';
+        item.innerHTML='<span style="font-size:16px">📦</span><span class="fac-item-name">'+file.name+'</span><span class="fac-item-status '+(dups>0?'status-warn':'status-ok')+'">'+nuevos+' XML(s) ✓'+dupTxt+'</span>';
+      }catch(e){
+        item.innerHTML='<span style="font-size:16px">📦</span><span class="fac-item-name">'+file.name+'</span><span class="fac-item-status status-err">Error: '+e.message+'</span>';
+      }
+    }else{
+      item.innerHTML='<span style="font-size:16px">⚠️</span><span class="fac-item-name">'+file.name+'</span><span class="fac-item-status status-err">Formato no válido</span>';
+    }
+    listEl.appendChild(item);
+  }
+  // Mostrar conteo total acumulado
+  const totalEl=document.getElementById('fac-total-acumulado');
+  if(totalEl) totalEl.textContent=facArchivos.length+' XML(s) en lote';
+  facUpdateBtn();
+}
+
+async function extraerXMLsDeZip(ab){
+  const bytes=new Uint8Array(ab),xmls=[];
+  let offset=0;
+  while(offset<bytes.length-4){
+    if(bytes[offset]===0x50&&bytes[offset+1]===0x4B&&bytes[offset+2]===0x03&&bytes[offset+3]===0x04){
+      const comp=bytes[offset+8]|(bytes[offset+9]<<8);
+      const cSz=bytes[offset+18]|(bytes[offset+19]<<8)|(bytes[offset+20]<<16)|(bytes[offset+21]<<24);
+      const uSz=bytes[offset+22]|(bytes[offset+23]<<8)|(bytes[offset+24]<<16)|(bytes[offset+25]<<24);
+      const fnLen=bytes[offset+26]|(bytes[offset+27]<<8);
+      const exLen=bytes[offset+28]|(bytes[offset+29]<<8);
+      const fname=new TextDecoder().decode(bytes.slice(offset+30,offset+30+fnLen));
+      const dOff=offset+30+fnLen+exLen;
+      if(fname.toLowerCase().endsWith('.xml')){
+        let txt;
+        if(comp===0){txt=new TextDecoder('utf-8').decode(bytes.slice(dOff,dOff+uSz));}
+        else if(comp===8){
+          try{
+            const ds=new DecompressionStream('deflate-raw');
+            const w=ds.writable.getWriter(),r=ds.readable.getReader();
+            w.write(bytes.slice(dOff,dOff+cSz));w.close();
+            const chunks=[];let done=false;
+            while(!done){const x=await r.read();if(x.done)done=true;else chunks.push(x.value);}
+            const out=new Uint8Array(chunks.reduce((s,c)=>s+c.length,0));
+            let p=0;chunks.forEach(c=>{out.set(c,p);p+=c.length;});
+            txt=new TextDecoder('utf-8').decode(out);
+          }catch(e){throw new Error('No se pudo descomprimir. Extrae el XML manualmente.');}
+        }
+        if(txt)xmls.push({nombre:fname,xml:txt});
+      }
+      offset=dOff+cSz;
+    }else{offset++;}
+  }
+  if(!xmls.length)throw new Error('No se encontró archivo ad*.xml en el ZIP.');
+  return xmls;
+}
+
+// ── Validación de coherencia de fechas del lote ──
+// Retorna {modaAnio, modaMes, fuera:[{fac, diasDif, label}]}
+function validarFechasLote(facturas){
+  // Calcular moda de año-mes
+  const conteo={};
+  for(const fac of facturas){
+    if(!fac.fecha) continue;
+    const [a,m]=fac.fecha.split('-').map(Number);
+    const k=a+'-'+String(m).padStart(2,'0');
+    conteo[k]=(conteo[k]||0)+1;
+  }
+  if(!Object.keys(conteo).length) return null;
+  // Moda = el que más aparece; en empate, el más reciente
+  const moda=Object.entries(conteo).sort((a,b)=>b[1]-a[1]||b[0].localeCompare(a[0]))[0][0];
+  const [modaAnio,modaMes]=moda.split('-').map(Number);
+
+  // Detectar facturas fuera del rango permitido (> 2 meses antes de la moda)
+  const fuera=[];
+  for(const fac of facturas){
+    if(!fac.fecha) continue;
+    const [fa,fm]=fac.fecha.split('-').map(Number);
+    // Diferencia en meses (puede ser negativa si la factura es más reciente)
+    const difMeses=(modaAnio*12+modaMes)-(fa*12+fm);
+    if(difMeses>2 || difMeses<0){
+      const MN=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      fuera.push({
+        fac,
+        difMeses,
+        label: MN[fm-1]+' '+fa,
+        modaLabel: MN[modaMes-1]+' '+modaAnio
+      });
+    }
+  }
+  return{modaAnio,modaMes,moda,fuera};
+}
+
+function facProcesar(){
+  const consec=parseInt(document.getElementById('fac-consec').value);
+  if(!consec||consec<1){showErr('fac-err','Ingresa un consecutivo válido.');return;}
+  if(!facArchivos.length){showErr('fac-err','Carga al menos un archivo.');return;}
+  hideErr('fac-err');
+  document.getElementById('fac-fecha-alerta').style.display='none';
+
+  facFacturas=[];
+  const errores=[], duplicados=[];
+  const numsFac=new Set();
+  for(const arch of facArchivos){
+    try{
+      const fac=parsearXMLFac(arch.xml);
+      // Deduplicación por número de factura
+      if(numsFac.has(fac.numero)){duplicados.push(fac.numero);continue;}
+      numsFac.add(fac.numero);
+      fac.consecutivoSiigo=consec+facFacturas.length;
+      fac.ccKey=detectarCCdesdNota(fac.nota)||null;
+      fac.centroInfo=fac.ccKey?FAC_CENTROS[fac.ccKey]:null;
+      fac.tipoNota=detectarTipoNota(fac.nota);
+      fac.grupos=agruparLineas(fac.lineas,fac.tipoNota);
+      fac.alertaFecha=false;
+      facFacturas.push(fac);
+    }catch(e){errores.push(arch.nombre+': '+e.message);}
+  }
+  if(errores.length)showErr('fac-err',errores.join(' | '));
+  if(duplicados.length){
+    const warnEl=document.getElementById('fac-warn');
+    warnEl.innerHTML='⚠️ <b>'+duplicados.length+' factura(s) duplicada(s) omitidas:</b> '+duplicados.join(', ');
+    warnEl.style.display='block';
+  }else{
+    document.getElementById('fac-warn').style.display='none';
+  }
+  if(!facFacturas.length){showErr('fac-err','No se pudieron leer las facturas.');return;}
+
+  // ── Ordenar por fecha ASC, desempate por número de factura ASC ──
+  facFacturas.sort((a,b)=>{
+    const fa=a.fecha||'',fb=b.fecha||'';
+    if(fa!==fb) return fa.localeCompare(fb);
+    return (a.numBL||0)-(b.numBL||0);
+  });
+  // Asignar consecutivos en orden cronológico
+  facFacturas.forEach((f,i)=>f.consecutivoSiigo=consec+i);
+
+  // ── Alerta de fechas — banner compacto expandible ──
+  const vf=validarFechasLote(facFacturas);
+  const alertaEl=document.getElementById('fac-fecha-alerta');
+  if(vf&&vf.fuera.length){
+    for(const {fac} of vf.fuera) fac.alertaFecha=true;
+    const MN=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const modaLabel=MN[vf.modaMes-1]+' '+vf.modaAnio;
+    const mesesUnicos=[...new Set(vf.fuera.map(({fac})=>{
+      const [fa,fm]=fac.fecha.split('-').map(Number);
+      return MN[fm-1]+' '+fa;
+    }))].join(', ');
+    const rows=vf.fuera.map(({fac,difMeses,label})=>{
+      const sentido=difMeses>0?difMeses+' mes'+(difMeses>1?'es':'')+' antes':'posterior al lote';
+      return '<tr style="border-bottom:1px solid #fde68a">'+
+        '<td style="padding:5px 10px;font-weight:700;color:#92400e">'+fac.numFacRaw+'</td>'+
+        '<td style="padding:5px 10px">'+fac.fecha+'</td>'+
+        '<td style="padding:5px 10px">'+fac.nombreProv.slice(0,30)+'</td>'+
+        '<td style="padding:5px 10px;color:#92400e;font-weight:600">'+label+'</td>'+
+        '<td style="padding:5px 10px;color:#7a8aaa;font-size:11px">'+sentido+'</td>'+
+        '</tr>';
+    }).join('');
+    alertaEl.style.display='block';
+    alertaEl.innerHTML=
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">'+
+        '<div style="display:flex;align-items:center;gap:8px">'+
+          '<span style="font-size:18px">⚠️</span>'+
+          '<span style="font-size:12px;color:#92400e">'+
+            '<strong>'+vf.fuera.length+' factura(s)</strong> fuera del rango del lote '+
+            '(moda: <strong>'+modaLabel+'</strong>) — Fechas detectadas: <strong>'+mesesUnicos+'</strong>'+
+          '</span>'+
+        '</div>'+
+        '<button onclick="toggleFechaDetalle()" id="btn-fecha-detalle" '+
+          'style="font-size:11px;font-weight:600;color:#92400e;background:transparent;border:1px solid #f59e0b;'+
+          'border-radius:6px;padding:3px 10px;cursor:pointer;white-space:nowrap">Ver detalle ▼</button>'+
+      '</div>'+
+      '<div id="fac-fecha-detalle" style="display:none;margin-top:10px;overflow-x:auto">'+
+        '<table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;border-radius:8px;overflow:hidden">'+
+          '<thead><tr style="background:#fef3c7">'+
+            '<th style="padding:6px 10px;text-align:left;color:#92400e">Factura</th>'+
+            '<th style="padding:6px 10px;text-align:left;color:#92400e">Fecha</th>'+
+            '<th style="padding:6px 10px;text-align:left;color:#92400e">Proveedor</th>'+
+            '<th style="padding:6px 10px;text-align:left;color:#92400e">Mes</th>'+
+            '<th style="padding:6px 10px;text-align:left;color:#92400e">Diferencia</th>'+
+          '</tr></thead>'+
+          '<tbody>'+rows+'</tbody>'+
+        '</table>'+
+        '<div style="margin-top:8px;font-size:11px;color:#92400e">'+
+          '💡 Puedes continuar si es intencional. Las facturas marcadas aparecen resaltadas en la tabla.'+
+        '</div>'+
+      '</div>';
+  }else{
+    alertaEl.style.display='none';
+  }
+
+  renderFacReview();
+  document.getElementById('fac-upload-section').style.display='none';
+  document.getElementById('fac-review-section').style.display='block';
+}
+
+function toggleFechaDetalle(){
+  const det=document.getElementById('fac-fecha-detalle');
+  const btn=document.getElementById('btn-fecha-detalle');
+  const open=det.style.display==='none';
+  det.style.display=open?'block':'none';
+  btn.textContent=open?'Ocultar ▲':'Ver detalle ▼';
+}
+
+function facEliminar(numFacRaw){
+  facFacturas=facFacturas.filter(f=>f.numFacRaw!==numFacRaw);
+  if(!facFacturas.length){
+    // Sin facturas — volver a pantalla de carga
+    facReset();
+    return;
+  }
+  // Reordenar y reasignar consecutivos
+  facFacturas.sort((a,b)=>{
+    const fa=a.fecha||'',fb=b.fecha||'';
+    if(fa!==fb) return fa.localeCompare(fb);
+    return (a.numBL||0)-(b.numBL||0);
+  });
+  const consec=parseInt(document.getElementById('fac-consec').value);
+  facFacturas.forEach((f,i)=>f.consecutivoSiigo=consec+i);
+  // Recalcular alerta de fechas y re-renderizar
+  facFacturas.forEach(f=>f.alertaFecha=false);
+  const vf=validarFechasLote(facFacturas);
+  if(vf&&vf.fuera.length) for(const {fac} of vf.fuera) fac.alertaFecha=true;
+  facProcesarAlertas();
+  renderFacReview();
+}
+
+// Recalcula solo el panel de alertas sin re-parsear XMLs
+function facProcesarAlertas(){
+  const alertaEl=document.getElementById('fac-fecha-alerta');
+  const vf=validarFechasLote(facFacturas);
+  if(vf&&vf.fuera.length){
+    const MN=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const modaLabel=MN[vf.modaMes-1]+' '+vf.modaAnio;
+    const mesesUnicos=[...new Set(vf.fuera.map(({fac})=>{
+      const [fa,fm]=fac.fecha.split('-').map(Number);
+      return MN[fm-1]+' '+fa;
+    }))].join(', ');
+    const rows=vf.fuera.map(({fac,difMeses,label})=>{
+      const sentido=difMeses>0?difMeses+' mes'+(difMeses>1?'es':'')+' antes':'posterior al lote';
+      return '<tr style="border-bottom:1px solid #fde68a">'+
+        '<td style="padding:5px 10px;font-weight:700;color:#92400e">'+fac.numFacRaw+'</td>'+
+        '<td style="padding:5px 10px">'+fac.fecha+'</td>'+
+        '<td style="padding:5px 10px">'+fac.nombreProv.slice(0,30)+'</td>'+
+        '<td style="padding:5px 10px;color:#92400e;font-weight:600">'+label+'</td>'+
+        '<td style="padding:5px 10px;color:#7a8aaa;font-size:11px">'+sentido+'</td>'+
+        '</tr>';
+    }).join('');
+    alertaEl.style.display='block';
+    alertaEl.innerHTML=
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">'+
+        '<div style="display:flex;align-items:center;gap:8px">'+
+          '<span style="font-size:18px">⚠️</span>'+
+          '<span style="font-size:12px;color:#92400e">'+
+            '<strong>'+vf.fuera.length+' factura(s)</strong> fuera del rango del lote '+
+            '(moda: <strong>'+modaLabel+'</strong>) — <strong>'+mesesUnicos+'</strong>'+
+          '</span>'+
+        '</div>'+
+        '<button onclick="toggleFechaDetalle()" id="btn-fecha-detalle" '+
+          'style="font-size:11px;font-weight:600;color:#92400e;background:transparent;border:1px solid #f59e0b;'+
+          'border-radius:6px;padding:3px 10px;cursor:pointer;white-space:nowrap">Ver detalle ▼</button>'+
+      '</div>'+
+      '<div id="fac-fecha-detalle" style="display:none;margin-top:10px;overflow-x:auto">'+
+        '<table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;border-radius:8px;overflow:hidden">'+
+          '<thead><tr style="background:#fef3c7">'+
+            '<th style="padding:6px 10px;text-align:left;color:#92400e">Factura</th>'+
+            '<th style="padding:6px 10px;text-align:left;color:#92400e">Fecha</th>'+
+            '<th style="padding:6px 10px;text-align:left;color:#92400e">Proveedor</th>'+
+            '<th style="padding:6px 10px;text-align:left;color:#92400e">Mes</th>'+
+            '<th style="padding:6px 10px;text-align:left;color:#92400e">Diferencia</th>'+
+          '</tr></thead>'+
+          '<tbody>'+rows+'</tbody>'+
+        '</table>'+
+        '<div style="margin-top:8px;font-size:11px;color:#92400e">'+
+          '💡 Puedes continuar si es intencional. Las facturas marcadas aparecen resaltadas en la tabla.'+
+        '</div>'+
+      '</div>';
+  }else{
+    alertaEl.style.display='none';
+  }
+}
+
+function facEditarCC(numFacRaw){
+  const sel=document.getElementById('cc-edit-'+numFacRaw);
+  if(sel) sel.style.display=sel.style.display==='none'?'inline-block':'none';
+}
+
+function facSetCC(numFacRaw,ccVal){
+  const fac=facFacturas.find(f=>f.numFacRaw===numFacRaw);
+  if(!fac)return;
+  fac.ccKey=ccVal||null;
+  fac.centroInfo=ccVal?FAC_CENTROS[ccVal]:null;
+  renderFacReview();
+}
+
+function renderFacReview(){
+  const totalPagar=facFacturas.reduce((s,f)=>s+f.totalPagar,0);
+  const sinCC=facFacturas.filter(f=>!f.ccKey).length;
+  const conDuda=facFacturas.some(f=>Object.values(f.grupos).some(g=>g.duda));
+  const conAlerta=facFacturas.some(f=>Object.values(f.grupos).some(g=>g.alertaIva));
+  const conNitErr=facFacturas.filter(f=>f.alertaNit).length;
+  const conNomErr=facFacturas.filter(f=>f.alertaNombre).length;
+
+  document.getElementById('fac-review-summary').innerHTML=
+    '<h3>📊 '+facFacturas.length+' factura(s) procesada(s)</h3>'+
+    '<div class="summary-row"><span>Total a contabilizar</span><span class="green"><strong>'+fmt(totalPagar)+'</strong></span></div>'+
+    '<div class="summary-row"><span>Primer consecutivo Siigo</span><span><strong>P-'+document.getElementById('fac-consec').value+'</strong></span></div>'+
+    (sinCC?'<div class="summary-row"><span style="color:#d63b3b">⚠️ Facturas sin contrato detectado</span><span class="red"><strong>'+sinCC+' — asigna CC en la tabla</strong></span></div>':'')+
+    (conDuda?'<div class="summary-row"><span style="color:#92400e">⚠️ Ítems sin clasificar</span><span class="amber"><strong>Revisa filas amarillas</strong></span></div>':'')+
+    (conAlerta?'<div class="summary-row"><span style="color:#d63b3b">⚠️ Diferencias en IVA</span><span class="red"><strong>Verifica montos</strong></span></div>':'')+
+    (conNitErr?'<div class="summary-row"><span style="color:#fff;background:#d63b3b;padding:2px 8px;border-radius:6px;font-weight:700">⛔ NIT receptor incorrecto</span><span class="red"><strong>'+conNitErr+' factura(s) — revisar y eliminar</strong></span></div>':'')+
+    (conNomErr?'<div class="summary-row"><span style="color:#92400e">⚠️ Nombre receptor no reconocido</span><span class="amber"><strong>'+conNomErr+' factura(s) — verificar</strong></span></div>':'');
+
+  const tbody=document.getElementById('fac-review-body');
+  let html='';
+  for(const fac of facFacturas){
+    const ci=fac.centroInfo;
+    const contNum=ci?ci.contNum:'?';
+    const sinCCfac=!fac.ccKey;
+    const provDisplay=nombreCorto(fac.nombreProv,fac.nitProv);
+
+    const ccBadge=sinCCfac
+      ?'<span style="color:#d63b3b">⚠️ CC →</span> '+
+        '<select style="font-size:11px;padding:2px 6px;border:1.5px solid #fecaca;border-radius:6px;margin-left:2px" onchange="facSetCC(\''+fac.numFacRaw+'\',this.value)">'+
+        '<option value="">-- Contrato --</option>'+
+        Object.entries(FAC_CENTROS).map(([k,v])=>'<option value="'+k+'">'+k+' - '+v.label+(v.contNum?' ('+v.contNum+')':'')+'</option>').join('')+
+        '</select>'
+      :'<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:10px;font-size:11px">CC '+fac.ccKey+'-'+ci.label+'</span>'+
+        ' <button onclick="facEditarCC(\''+fac.numFacRaw+'\')" title="Cambiar contrato" '+
+        'style="font-size:10px;border:1px solid #dde3ef;background:#fff;border-radius:4px;padding:1px 5px;cursor:pointer;color:#7a8aaa">✏️</button>'+
+        '<select id="cc-edit-'+fac.numFacRaw+'" style="display:none;font-size:11px;padding:2px 6px;border:1.5px solid #2563eb;border-radius:6px;margin-left:4px" '+
+        'onchange="facSetCC(\''+fac.numFacRaw+'\',this.value)">'+
+        '<option value="">-- Nuevo contrato --</option>'+
+        Object.entries(FAC_CENTROS).map(([k,v])=>'<option value="'+k+'"'+(k===fac.ccKey?' selected':'')+'>'+k+' - '+v.label+(v.contNum?' ('+v.contNum+')':'')+'</option>').join('')+
+        '</select>';
+
+    const elimBtn='<button onclick="facEliminar(\''+fac.numFacRaw+'\')" title="Eliminar esta factura del lote" '+
+      'style="float:right;font-size:11px;border:none;background:transparent;cursor:pointer;color:#d63b3b;'+
+      'padding:1px 5px;border-radius:4px" onmouseover="this.style.background=\'#fef2f2\'" '+
+      'onmouseout="this.style.background=\'transparent\'">🗑️ Eliminar</button>';
+
+    html+='<tr class="fac-group-header"><td colspan="10" style="'+(sinCCfac?'background:#fef2f2':fac.alertaFecha?'background:#fffbeb;border-left:4px solid #f59e0b':fac.alertaNit?'background:#fef2f2;border-left:4px solid #d63b3b':'')+'">'+
+      elimBtn+
+      (fac.alertaNit
+        ?'<span style="background:#d63b3b;color:#fff;border-radius:4px;padding:2px 8px;font-size:10px;font-weight:700;margin-right:6px">⛔ NIT RECEPTOR INCORRECTO: '+fac.nitReceptor+' — No corresponde a AUPHCB ni FNHN</span>'
+        : fac.alertaNombre
+          ?'<span style="background:#f59e0b;color:#fff;border-radius:4px;padding:1px 7px;font-size:10px;font-weight:700;margin-right:6px">⚠️ NOMBRE RECEPTOR NO RECONOCIDO: '+( fac.nombreReceptor||'').slice(0,40)+'</span>'
+          :'')+
+      (fac.alertaFecha?'<span style="background:#f59e0b;color:#fff;border-radius:4px;padding:1px 7px;font-size:10px;font-weight:700;margin-right:6px">⚠️ FECHA FUERA DEL LOTE</span>':'')+
+      '📄 <strong>'+fac.numFacRaw+'</strong> &nbsp;|&nbsp; '+fac.fecha+' &nbsp;|&nbsp; '+
+      fac.nombreProv.slice(0,30)+' &nbsp;|&nbsp; Total: <strong>'+fmt(fac.totalPagar)+'</strong>'+
+      ' &nbsp;|&nbsp; '+ccBadge+
+      (fac.nota?' &nbsp;|&nbsp; <em style="font-size:10px;color:#7a8aaa">'+fac.nota.slice(0,60)+'</em>':'')+
+      '</td></tr>';
+
+    for(const[,g] of Object.entries(fac.grupos)){
+      const descCosto=construirDescCosto(fac.nota,fac.numFacCorto,contNum,g.pref);
+      const descIva=g.cuentaIva&&!g.ivaEnCosto?construirDescIva(fac.nota,fac.numFacCorto,contNum,g.pref):'';
+      html+='<tr '+(g.duda?'style="background:#fffbeb"':'')+'>'+
+        '<td></td>'+
+        '<td style="font-weight:700;color:#2563eb">P-'+fac.consecutivoSiigo+'</td>'+
+        '<td>'+fac.numFacRaw+'</td><td>'+fac.fecha+'</td>'+
+        '<td style="font-size:11px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+provDisplay+'</td>'+
+        '<td style="font-weight:600;font-size:11px">'+g.cuenta+(g.cuentaIva&&!g.ivaEnCosto?'<br><span style="color:#c97d00">'+g.cuentaIva+'</span>':'')+'</td>'+
+        '<td style="font-size:11px">'+descCosto+
+          (descIva?'<br><span style="color:#c97d00">'+descIva+'</span>':'')+
+          (g.duda?' <span style="color:#c97d00">⚠️</span>':'')+
+          (g.alertaIva?'<br><span style="color:#d63b3b;font-size:10px">'+g.alertaIva+'</span>':'')+
+        '</td>'+
+        '<td style="color:#0d9e6e;font-weight:700">D</td>'+
+        '<td style="text-align:right;font-size:11px">'+fmt(g.valorDebitoCosto)+
+          (g.valorDebitoIva>0&&!g.ivaEnCosto?'<br><span style="color:#c97d00">+'+fmt(g.valorDebitoIva)+' IVA</span>':'')+'</td>'+
+        '<td style="font-size:10px;color:#7a8aaa">'+(g.ivaEnCosto&&g.ivaAcum>0?'IVA incl.':g.ivaAcum>0?'IVA sep.':'Excluido')+'</td>'+
+      '</tr>';
+    }
+
+    // Fila pasivo
+    const descPas=construirDescPasivo(fac.nombreProv,fac.nitProv,fac.nota,fac.numBL,contNum);
+    html+='<tr class="gmf-row">'+
+      '<td></td>'+
+      '<td style="font-weight:700;color:#2563eb">P-'+fac.consecutivoSiigo+'</td>'+
+      '<td>'+fac.numFacRaw+'</td><td>'+fac.fecha+'</td>'+
+      '<td style="font-size:11px">'+provDisplay+'</td>'+
+      '<td style="font-weight:600;color:#d63b3b">2435050500</td>'+
+      '<td style="font-size:11px">'+descPas+'</td>'+
+      '<td style="color:#d63b3b;font-weight:700">C</td>'+
+      '<td style="text-align:right;font-weight:600;color:#d63b3b">'+fmt(fac.totalPagar)+'</td>'+
+      '<td style="font-size:10px;color:#7a8aaa">FP=2 · BK=P-001</td>'+
+    '</tr>';
+  }
+  tbody.innerHTML=html;
+}
+
+// ── Generar fila Siigo Doc P (68 columnas) ──
+function makeRowP(consec,cuenta,dc,valor,anio,mes,dia,cc,nit,desc,seq,fpago,bk,bl,bm,bn,bo,bp){
+  const now=new Date();
+  const al=now.getFullYear().toString()+String(now.getMonth()+1).padStart(2,'0')+String(now.getDate()).padStart(2,'0');
+  const am=String(now.getHours()).padStart(2,'0')+String(now.getMinutes()).padStart(2,'0')+String(now.getSeconds()).padStart(2,'0');
+  return['P',1,consec,cuenta,dc,valor,anio,mes,dia,1,670,0,seq,cc,0,nit,0,
+    (desc||'').padEnd(50).slice(0,50),0,'N',0,fpago,0,0,0,0,0,
+    '     ',0,'          ','                                        ',
+    '          ','                                        ',0,0,0,' ',al,am,
+    '          ','                                        ',0,0,0,
+    '          ','                                        ',0,0,0,
+    '          ','                                        ',0,0,0,
+    '          ','                                        ',0,0,0,
+    0,0,0,bk||'     ',bl||0,bm||0,bn||0,bo||0,bp||0];
+}
+
+function facExportar(){
+  hideErr('fac-err');
+  const sinCC=facFacturas.filter(f=>!f.ccKey);
+  if(sinCC.length){showErr('fac-err','Asigna el contrato a: '+sinCC.map(f=>f.numFacRaw).join(', '));return;}
+  const todasFilas=[];
+
+  for(const fac of facFacturas){
+    const ci=fac.centroInfo;
+    const cc=ci.cc,contNum=ci.contNum;
+    const nit=parseInt(fac.nitProv)||0;
+    const [anio,mes,dia]=fac.fecha.split('-').map(Number);
+    let seq=1;
+
+    for(const[,g] of Object.entries(fac.grupos)){
+      const descCosto=construirDescCosto(fac.nota,fac.numFacCorto,contNum,g.pref);
+      // Línea cuenta costo
+      todasFilas.push(makeRowP(fac.consecutivoSiigo,g.cuenta,'D',g.valorDebitoCosto,anio,mes,dia,cc,nit,descCosto,seq++,0,null,null,null,null,null,null));
+      // Línea IVA separada (si corresponde)
+      if(g.cuentaIva&&!g.ivaEnCosto&&g.valorDebitoIva>0){
+        const descIva=construirDescIva(fac.nota,fac.numFacCorto,contNum,g.pref);
+        todasFilas.push(makeRowP(fac.consecutivoSiigo,g.cuentaIva,'D',g.valorDebitoIva,anio,mes,dia,cc,nit,descIva,seq++,0,null,null,null,null,null,null));
+      }
+    }
+    // Fila pasivo — total completo
+    const descPas=construirDescPasivo(fac.nombreProv,fac.nitProv,fac.nota,fac.numBL,contNum);
+    todasFilas.push(makeRowP(fac.consecutivoSiigo,'2435050500','C',fac.totalPagar,anio,mes,dia,cc,nit,descPas,seq++,2,'P-001',fac.numBL,1,anio,mes,dia));
+  }
+
+  if(!todasFilas.length){showErr('fac-err','No hay datos para exportar.');return;}
+
+  const XLSX_=window.XLSX,wb=XLSX_.utils.book_new(),ws=XLSX_.utils.aoa_to_sheet([]);
+  const fac0=facFacturas[0],[a0,m0]=fac0.fecha.split('-').map(Number);
+  const mAbr=['','ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'][m0];
+
+  XLSX_.utils.sheet_add_aoa(ws,[
+    ['A.U.P.H.C.B. NUEVO HORIZONTE'],
+    ['MODELO PARA LA IMPORTACION DE MOVIMIENTO CONTABLE - MODELO GENERAL'],
+    ['De :  '+mAbr+'  1/'+a0+'   A :  '+mAbr+' 31/'+a0],[null],
+  ],{origin:'A1'});
+
+  const hdrs=['TIPO DE COMPROBANTE (OBLIGATORIO)','CÓDIGO COMPROBANTE  (OBLIGATORIO)','NÚMERO DE DOCUMENTO','CUENTA CONTABLE   (OBLIGATORIO)','DÉBITO O CRÉDITO (OBLIGATORIO)','VALOR DE LA SECUENCIA   (OBLIGATORIO)','AÑO DEL DOCUMENTO','MES DEL DOCUMENTO','DÍA DEL DOCUMENTO','CÓDIGO DEL VENDEDOR','CÓDIGO DE LA CIUDAD','CÓDIGO DE LA ZONA','SECUENCIA','CENTRO DE COSTO','SUBCENTRO DE COSTO','NIT','SUCURSAL','DESCRIPCIÓN DE LA SECUENCIA','NÚMERO DE CHEQUE','COMPROBANTE ANULADO','CÓDIGO DEL MOTIVO DE DEVOLUCIÓN','FORMA DE PAGO','VALOR DEL CARGO 1 DE LA SECUENCIA','VALOR DEL CARGO 2 DE LA SECUENCIA','VALOR DEL DESCUENTO 1 DE LA SECUENCIA','VALOR DEL DESCUENTO 2 DE LA SECUENCIA','VALOR DEL DESCUENTO 3 DE LA SECUENCIA','FACTURA ELECTRÓNICA A DEBITAR/ACREDITAR','NÚMERO DE FACTURA ELECTRÓNICA A DEBITAR/ACREDITAR','PREFIJO DE ORDER REFERENCE','CONSECUTIVO DE ORDER REFERENCE','PREFIJO ORDEN DE ENTREGA','NÚMERO ORDEN DE ENTREGA','AÑO FECHA DE ORDEN DE ENTREGA','MES FECHA DE ORDEN DE ENTREGA','DÍA FECHA DE ORDEN DE ENTREGA','INGRESOS PARA TERCEROS','FECHA ACTUALIZACIÓN DEL DOCUMENTO','HORA DE ACTUALIZACIÓN DEL DOCUMENTO','PREFIJO ORDEN DE ENTREGA2','NÚMERO ORDEN DE ENTREGA2','AÑO FECHA DE ORDEN DE ENTREGA2','MES FECHA DE ORDEN DE ENTREGA2','DÍA FECHA DE ORDEN DE ENTREGA2','PREFIJO ORDEN DE ENTREGA3','NÚMERO ORDEN DE ENTREGA3','AÑO FECHA DE ORDEN DE ENTREGA3','MES FECHA DE ORDEN DE ENTREGA3','DÍA FECHA DE ORDEN DE ENTREGA3','PREFIJO ORDEN DE ENTREGA4','NÚMERO ORDEN DE ENTREGA4','AÑO FECHA DE ORDEN DE ENTREGA4','MES FECHA DE ORDEN DE ENTREGA4','DÍA FECHA DE ORDEN DE ENTREGA4','PREFIJO ORDEN DE ENTREGA5','NÚMERO ORDEN DE ENTREGA5','AÑO FECHA DE ORDEN DE ENTREGA5','MES FECHA DE ORDEN DE ENTREGA5','DÍA FECHA DE ORDEN DE ENTREGA5','PORCENTAJE ALIMENTOS ULTRAPROCESADOS','VALOR ALIMENTOS ULTRAPROCESADOS','VALOR BEBIDAS AZUCARADAS','TIPO Y COMPROBANTE CRUCE','NÚMERO DE DOCUMENTO CRUCE','NÚMERO DE VENCIMIENTO','AÑO VENCIMIENTO DE DOCUMENTO CRUCE','MES VENCIMIENTO DE DOCUMENTO CRUCE','DÍA VENCIMIENTO DE DOCUMENTO CRUCE'];
+  XLSX_.utils.sheet_add_aoa(ws,[hdrs],{origin:'A5'});
+  XLSX_.utils.sheet_add_aoa(ws,todasFilas,{origin:'A6'});
+
+  const cw=[43.28,17.57,27.28,39.57,38.28,45.85,24,23.85,23.28,26,24.85,22.57,13.14,20.42,24.71,13.57,12,57.28,22.71,27.71,41,18.28,41.71,47,47,47,47,50.85,63.85,33.57,40,31,63.85,33.57,40,31,29.28,44.57,46.71,32.42,32.57,39.28,39.14,38.57,32.42,32.57,39.28,39.14,38.57,32.42,32.57,39.28,39.14,38.57,32.42,32.57,39.28,39.14,38.57,48.71,42.28,32.85,40,40,20,20,20,20];
+  ws['!cols']=cw.map(w=>({wch:w}));
+  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:67}},{s:{r:1,c:0},e:{r:1,c:67}},{s:{r:2,c:0},e:{r:2,c:67}},{s:{r:3,c:0},e:{r:3,c:67}}];
+
+  const fmtI='##,##0_);[Red]\\(##,##0\\)',fmtD='##,##0.00_);[Red]\\(##,##0.00\\)';
+  const iC=[1,7,8,9,10,11,12,13,14,15,16,18,20,33,34,35,40,41,42,43,44,46,47,48,49,50,52,53,54,55,56,58,59,60,61,63,64,65,66,67];
+  const dC=[5,22,23,24,25,26];
+  for(let r=5;r<5+todasFilas.length;r++){
+    for(const c of iC){const a=XLSX_.utils.encode_cell({r,c});if(ws[a])ws[a].z=fmtI;}
+    for(const c of dC){const a=XLSX_.utils.encode_cell({r,c});if(ws[a])ws[a].z=fmtD;}
+  }
+  XLSX_.utils.book_append_sheet(wb,ws,'Hoja1');
+  XLSX_.writeFile(wb,'facturas_P_'+a0+String(m0).padStart(2,'0')+'.xlsx');
+}
+
+function facReset(){
+  facArchivos=[];facFacturas=[];
+  document.getElementById('fac-list').innerHTML='';
+  document.getElementById('fac-list').style.display='none';
+  document.getElementById('fac-consec').value='1';
+  document.getElementById('btn-fac-procesar').disabled=true;
+  document.getElementById('fac-upload-section').style.display='block';
+  document.getElementById('fac-review-section').style.display='none';
+  document.getElementById('fac-review-body').innerHTML='';
+  document.getElementById('fac-fecha-alerta').style.display='none';
+  hideErr('fac-err');
+}
+
+function resetContable(){
+  contWb=null;contRows=null;contData=null;
+  document.getElementById('cont-name').textContent='Cargar extracto';
+  document.getElementById('cont-hint').textContent='.xlsx o .txt · Clic o arrastra';
+  document.getElementById('dz-cont').classList.remove('done');
+  document.getElementById('input-cont').value='';
+  document.getElementById('cont-preview').style.display='none';
+  hideErr('cont-err');hideErr('cont-ok');updateContBtn();
+}
+</script>
+
+</body>
+</html>

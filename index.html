@@ -124,6 +124,12 @@ tr.gmf-row td{background:#ffffff}
 .btn-primary{padding:10px 22px;border:none;border-radius:8px;background:var(--ac);color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;font-family:inherit}
 .btn-primary:hover{background:var(--ach)}.btn-primary:disabled{opacity:.4;cursor:not-allowed}
   .cta-fila:hover{background:#eff4ff}
+  .lin-act{width:30px;text-align:center;padding-left:2px;padding-right:2px}
+  .lin-x{border:none;background:transparent;color:#b6bcc6;cursor:pointer;font-size:13px;line-height:1;padding:3px 5px;border-radius:5px}
+  .lin-x:hover{background:#fef3f2;color:#b42318}
+  .lin-x.lin-r,.lin-x.lin-a{color:#1d4ed8}
+  .lin-x.lin-r:hover,.lin-x.lin-a:hover{background:#eff4ff;color:#1d4ed8}
+  .lin-del td:not(.lin-act){opacity:.45;text-decoration:line-through}
   .val-ed{cursor:text;border-bottom:1px dotted transparent}
   .val-ed:hover{border-bottom-color:#98a2b3}
   .cta-clic:hover{color:#1d4ed8}
@@ -134,10 +140,11 @@ tr.gmf-row td{background:#ffffff}
   <div class="header">
     <div class="logo">CF</div>
     <div>
-      <h1>Contafacil ANH - FNHN <span id="app-version" style="font-size:12px;font-weight:400;color:#667085;cursor:pointer;border-bottom:1px dashed #cfd4dc" onclick="toggleChangelog()" title="Ver historial de cambios">v2.12.0</span></h1>
+      <h1>Contafacil ANH - FNHN <span id="app-version" style="font-size:12px;font-weight:400;color:#667085;cursor:pointer;border-bottom:1px dashed #cfd4dc" onclick="toggleChangelog()" title="Ver historial de cambios">v2.12.1</span></h1>
       <div class="sub">Extracto Bancario · Siigo · Conciliación 1:1, N:M, lotes ±4 días · Importación Contable Siigo</div>
       <div id="changelog-panel" style="display:none;position:absolute;top:70px;left:60px;background:#fff;border:1.5px solid #e4e7ec;border-radius:12px;padding:16px 20px;font-size:11px;color:#101828;line-height:1.9;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,.12);min-width:320px">
         <div style="font-weight:700;font-size:13px;margin-bottom:8px"> Historial de versiones</div>
+        <div><b>v2.12.1</b> — 2026-11-11: El IVA pasa a fila propia (cuenta, descripción y valor editables); quitar y restaurar cualquier línea con los botones de la izquierda; agregar línea desde la fila del proveedor.</div>
         <div><b>v2.12.0</b> — 2026-11-11: Registro contable editable: cuentas de IVA y proveedor con el buscador, valores editables con doble clic, líneas agregadas (retenciones, ajustes) y línea del proveedor que se recalcula sola.</div>
         <div><b>v2.11.0</b> — 2026-11-11: Buscador de cuenta del catálogo (por código o nombre) al hacer clic sobre la cuenta de cada línea; opción de recordarla en la regla del proveedor; se quita el selector de tipo. Asignación por municipio con respaldo desde la descripción del contrato.</div>
         <div><b>v2.10.0</b> — 2026-11-11: Contratos activos/inactivos con municipio o palabras clave; la asignación automática solo usa contratos activos (primero número de contrato, luego municipio) y avisa si la nota cita un contrato inactivo.</div>
@@ -1826,6 +1833,7 @@ function facAplicarCtas(f){
     if(a){g.cuenta=a.c;g.cuentaMan=true;g.cuentaUsr=a.usr;g.cuentaRegla=!a.usr;g.duda=false;}
     const b=pick(g.gid+'|iva');
     if(b&&g.cuentaIva){g.cuentaIva=b.c;g.cuentaIvaMan=true;}
+    g.del=!!(f.delLin&&f.delLin[g.gid]);g.ivaDel=!!(f.delLin&&f.delLin[g.gid+'|iva']);
     const v=vm[g.gid];
     if(v){
       if(v.costo!=null){g.valorDebitoCosto=v.costo;g.editC=true;}
@@ -1842,15 +1850,16 @@ function facDcCosto(f){return esNC(f)?'C':'D';}
 function facCostSide(f){   // centavos del lado de costo/IVA + líneas agregadas del mismo lado
   let s=0;
   for(const g of Object.values(f.grupos)){
+    if(g.del)continue;
     s+=r100(g.valorDebitoCosto);
-    if(g.cuentaIva&&!g.ivaEnCosto&&g.valorDebitoIva>0)s+=r100(g.valorDebitoIva);
+    if(g.cuentaIva&&!g.ivaEnCosto&&g.valorDebitoIva>0&&!g.ivaDel)s+=r100(g.valorDebitoIva);
   }
   const dc=facDcCosto(f);
   (f.extras||[]).forEach(e=>{if(e.dc===dc)s+=r100(e.valor);});
   return s;
 }
 function facExtrasOpp(f){const dc=facDcCosto(f);return (f.extras||[]).filter(e=>e.dc!==dc).reduce((s,e)=>s+r100(e.valor),0);}
-function facHayEdic(f){return (f.extras&&f.extras.length)||Object.values(f.grupos).some(g=>g.editC||g.editI);}
+function facHayEdic(f){return (f.extras&&f.extras.length)||Object.values(f.grupos).some(g=>g.editC||g.editI||g.del||g.ivaDel);}
 function facProvValor(f){
   if(f.provMan!=null)return f.provMan;
   if(!facHayEdic(f))return f.totalPagar;
@@ -1871,9 +1880,10 @@ function facEdit(el,uid,kind,key){
   else if(kind==='prov'){cur=facProvValor(f);}
   else if(kind==='xval'){cur=(f.extras.find(e=>e.id===key)||{}).valor;}
   else if(kind==='xdesc'){cur=(f.extras.find(e=>e.id===key)||{}).desc;}
+  else if(kind==='gdesc'||kind==='idesc'){cur=facDescLinea(f,f.grupos[key],kind==='idesc');}
   const inp=document.createElement('input');
   inp.value=cur;inp.className='form-input';
-  inp.style.cssText='padding:3px 6px;font-size:11px;'+(kind==='xdesc'?'width:100%':'width:110px;text-align:right');
+  inp.style.cssText='padding:3px 6px;font-size:11px;'+(/desc$/.test(kind)?'width:100%':'width:110px;text-align:right');
   el.textContent='';el.appendChild(inp);inp.focus();inp.select();
   let fin=false;
   const done=ok=>{
@@ -1881,6 +1891,11 @@ function facEdit(el,uid,kind,key){
     if(!ok){renderFacReview();return;}
     const v=inp.value;
     if(kind==='xdesc'){const e=f.extras.find(x=>x.id===key);if(e&&v.trim())e.desc=v.trim().slice(0,40);}
+    else if(kind==='gdesc'||kind==='idesc'){
+      const g=f.grupos[key],k=key+(kind==='idesc'?'|iva':'');f.descMan=f.descMan||{};
+      const t=v.trim().slice(0,40);delete f.descMan[k];
+      if(t&&t!==facDescLinea(f,g,kind==='idesc'))f.descMan[k]=t;
+    }
     else{
       const n=facParseNum(v);
       if(Number.isNaN(n)){toast('Valor no válido.');renderFacReview();return;}
@@ -1899,6 +1914,21 @@ function facEdit(el,uid,kind,key){
   inp.onkeydown=e=>{if(e.key==='Enter')done(true);else if(e.key==='Escape')done(false);};
   inp.onblur=()=>done(true);
 }
+function facDescLinea(f,g,iva){
+  const key=g.gid+(iva?'|iva':'');
+  if(f.descMan&&f.descMan[key])return f.descMan[key];
+  const cn=f.centroInfo?f.centroInfo.contNum:'?';
+  const base=iva?construirDescIva(f.nota,f.numFacCorto,cn,g.pref):construirDescCosto(f.nota,f.numFacCorto,cn,g.pref);
+  return esNC(f)?('NC '+base).slice(0,40):base;
+}
+function facDelLin(uid,key,del){
+  const f=facFacturas.find(x=>x.uid===uid)||facNC.find(x=>x.uid===uid);if(!f)return;
+  f.delLin=f.delLin||{};
+  if(del)f.delLin[key]=true;else delete f.delLin[key];
+  facAplicarCtas(f);
+  renderFacReview();if(_verUid)facVerRender();
+  toast(del?'Línea quitada del registro. Usa ↺ para restaurarla.':'Línea restaurada.');
+}
 function facToggleDC(uid,id){
   const f=facFacturas.find(x=>x.uid===uid)||facNC.find(x=>x.uid===uid);if(!f)return;
   const e=f.extras.find(x=>x.id===id);if(!e)return;
@@ -1909,7 +1939,7 @@ function facDelExtra(uid,id){
   f.extras=(f.extras||[]).filter(x=>x.id!==id);renderFacReview();if(_verUid)facVerRender();
 }
 function facAddLinea(uid){ctaAbrir(uid,'nuevo');}
-function facDuda(f){return Object.values(f.grupos).some(g=>g.duda||g.alertaIva);}
+function facDuda(f){return Object.values(f.grupos).some(g=>!g.del&&(g.duda||g.alertaIva));}
 const FAC_FILTROS=[
   ['todas','Todas',()=>true],
   ['sincc','Sin contrato',f=>!f.ccKey],
@@ -2823,30 +2853,43 @@ function renderFacReview(){
       '</td></tr>';
 
     for(const[,g] of Object.entries(fac.grupos)){
-      const descCosto=esc((nc?'NC ':'')+construirDescCosto(fac.nota,fac.numFacCorto,contNum,g.pref));
-      const descIva=g.cuentaIva&&!g.ivaEnCosto?esc((nc?'NC ':'')+construirDescIva(fac.nota,fac.numFacCorto,contNum,g.pref)):'';
-      html+='<tr>'+
-        '<td'+(g.duda?' style="border-left:3px solid #f79009"':'')+'></td>'+
-        '<td style="font-weight:700;color:#1d4ed8">'+doc+(nc?'-5-':'-')+fac.consecutivoSiigo+'</td>'+
+      const dCs=facDescLinea(fac,g,false),dIv=facDescLinea(fac,g,true);
+      const hayIva=g.cuentaIva&&!g.ivaEnCosto&&(g.valorDebitoIva>0||g.ivaDel);
+      const xb=(key,del)=>del
+        ?'<button class="lin-x lin-r" onclick="facDelLin(\''+fac.uid+'\',\''+key+'\',false)" title="Restaurar esta línea">↺</button>'
+        :'<button class="lin-x" onclick="facDelLin(\''+fac.uid+'\',\''+key+'\',true)" title="Quitar esta línea del registro contable">✕</button>';
+      const comun='<td style="font-weight:700;color:#1d4ed8">'+doc+(nc?'-5-':'-')+fac.consecutivoSiigo+'</td>'+
         '<td>'+esc(fac.numFacRaw)+'</td><td>'+esc(fac.fecha)+'</td>'+
-        '<td style="font-size:11px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+provDisplay+'</td>'+
-        '<td style="font-weight:600;font-size:11px"><span class="cta-clic" onclick="ctaAbrir(\''+fac.uid+'\',\''+g.gid+'\')" title="Clic para buscar otra cuenta en el catálogo" style="cursor:pointer;border-bottom:1px dashed #98a2b3">'+g.cuenta+'</span>'+(g.cuentaMan?' <span style="font-size:9px;font-weight:700;color:#1d4ed8;border:1px solid #b2ccff;border-radius:8px;padding:0 5px">'+(g.cuentaRegla&&!g.cuentaUsr?'regla':'manual')+'</span>':'')+(ctaNom(g.cuenta)?'<div style="font-weight:400;font-size:10px;color:#667085;max-width:150px">'+esc(ctaNom(g.cuenta))+'</div>':'')+(g.cuentaIva&&!g.ivaEnCosto?'<span class="cta-clic" onclick="ctaAbrir(\''+fac.uid+'\',\''+g.gid+'|iva\')" title="Clic para buscar otra cuenta" style="color:#b54708;display:block;cursor:pointer">'+g.cuentaIva+(g.cuentaIvaMan?' <span style="font-size:9px;color:#1d4ed8">manual</span>':'')+'</span>'+(ctaNom(g.cuentaIva)?'<div style="font-weight:400;font-size:10px;color:#b54708;max-width:150px">'+esc(ctaNom(g.cuentaIva))+'</div>':''):'')+'</td>'+
-        '<td style="font-size:11px">'+descCosto+
-          (descIva?'<br><span style="color:#b54708">'+descIva+'</span>':'')+
-          (g.duda?' <span style="color:#b54708" title="Sin nota ni palabra clave: se asumió ALIMENTOS">⚠ por defecto</span>':'')+
-          (g.alertaIva?'<br><span style="color:#b42318;font-size:10px">'+g.alertaIva+'</span>':'')+
+        '<td style="font-size:11px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+provDisplay+'</td>';
+      const tagMan=(man,rg)=>man?' <span style="font-size:9px;font-weight:700;color:#1d4ed8;border:1px solid #b2ccff;border-radius:8px;padding:0 5px">'+(rg?'regla':'manual')+'</span>':'';
+      html+='<tr'+(g.del?' class="lin-del"':'')+'>'+
+        '<td class="lin-act"'+(g.duda&&!g.del?' style="border-left:3px solid #f79009"':'')+'>'+xb(g.gid,g.del)+'</td>'+comun+
+        '<td style="font-weight:600;font-size:11px"><span class="cta-clic" onclick="ctaAbrir(\''+fac.uid+'\',\''+g.gid+'\')" title="Clic para buscar otra cuenta en el catálogo" style="cursor:pointer;border-bottom:1px dashed #98a2b3">'+g.cuenta+'</span>'+tagMan(g.cuentaMan,g.cuentaRegla&&!g.cuentaUsr)+(ctaNom(g.cuenta)?'<div style="font-weight:400;font-size:10px;color:#667085;max-width:150px">'+esc(ctaNom(g.cuenta))+'</div>':'')+'</td>'+
+        '<td style="font-size:11px"><span class="val-ed" ondblclick="facEdit(this,\''+fac.uid+'\',\'gdesc\',\''+g.gid+'\')" title="Doble clic para editar la descripción">'+esc(dCs)+'</span>'+
+          (g.duda&&!g.del?' <span style="color:#b54708" title="Sin nota ni palabra clave: se asumió ALIMENTOS">⚠ por defecto</span>':'')+
+          (g.alertaIva&&!g.del?'<br><span style="color:#b42318;font-size:10px">'+g.alertaIva+'</span>':'')+
         '</td>'+
         '<td style="font-weight:700">'+(nc?'C':'D')+'</td>'+
-        '<td style="text-align:right;font-size:11px"><span class="val-ed" ondblclick="facEdit(this,\''+fac.uid+'\',\'costo\',\''+g.gid+'\')" title="Doble clic para editar el valor (vacío = restaurar)">'+fmt(g.valorDebitoCosto)+'</span>'+(g.editC?' <span style="color:#1d4ed8" title="Valor editado (original '+fmt(g.costoOrig)+')">•</span>':'')+
-          (g.valorDebitoIva>0&&!g.ivaEnCosto?'<br><span class="val-ed" style="color:#b54708" ondblclick="facEdit(this,\''+fac.uid+'\',\'iva\',\''+g.gid+'\')" title="Doble clic para editar el IVA">+'+fmt(g.valorDebitoIva)+' IVA</span>'+(g.editI?' <span style="color:#1d4ed8" title="IVA editado">•</span>':''):'')+'</td>'+
+        '<td style="text-align:right;font-size:11px"><span class="val-ed" ondblclick="facEdit(this,\''+fac.uid+'\',\'costo\',\''+g.gid+'\')" title="Doble clic para editar el valor (vacío = restaurar)">'+fmt(g.valorDebitoCosto)+'</span>'+(g.editC?' <span style="color:#1d4ed8" title="Valor editado (original '+fmt(g.costoOrig)+')">•</span>':'')+'</td>'+
         '<td style="font-size:10px;color:#667085">'+(g.ivaEnCosto&&g.ivaAcum>0?'IVA incl.':g.ivaAcum>0?'IVA sep.':'Excluido')+'</td>'+
       '</tr>';
+      if(hayIva){
+        const iDel=g.del||g.ivaDel;
+        html+='<tr'+(iDel?' class="lin-del"':'')+'>'+
+          '<td class="lin-act">'+(g.del?'':xb(g.gid+'|iva',g.ivaDel))+'</td>'+comun+
+          '<td style="font-weight:600;font-size:11px"><span class="cta-clic" onclick="ctaAbrir(\''+fac.uid+'\',\''+g.gid+'|iva\')" title="Clic para buscar otra cuenta en el catálogo" style="cursor:pointer;border-bottom:1px dashed #98a2b3;color:#b54708">'+g.cuentaIva+'</span>'+tagMan(g.cuentaIvaMan,false)+(ctaNom(g.cuentaIva)?'<div style="font-weight:400;font-size:10px;color:#b54708;max-width:150px">'+esc(ctaNom(g.cuentaIva))+'</div>':'')+'</td>'+
+          '<td style="font-size:11px;color:#b54708"><span class="val-ed" ondblclick="facEdit(this,\''+fac.uid+'\',\'idesc\',\''+g.gid+'\')" title="Doble clic para editar la descripción">'+esc(dIv)+'</span></td>'+
+          '<td style="font-weight:700">'+(nc?'C':'D')+'</td>'+
+          '<td style="text-align:right;font-size:11px;color:#b54708"><span class="val-ed" ondblclick="facEdit(this,\''+fac.uid+'\',\'iva\',\''+g.gid+'\')" title="Doble clic para editar el IVA (vacío = restaurar)">'+fmt(g.valorDebitoIva)+'</span>'+(g.editI?' <span style="color:#1d4ed8" title="IVA editado (original '+fmt(g.ivaOrig)+')">•</span>':'')+'</td>'+
+          '<td style="font-size:10px;color:#667085">IVA</td>'+
+        '</tr>';
+      }
     }
 
     // Líneas agregadas por el usuario
     for(const e of (fac.extras||[])){
       html+='<tr style="background:#ffffff">'+
-        '<td style="border-left:3px solid #1d4ed8"></td>'+
+        '<td class="lin-act" style="border-left:3px solid #1d4ed8"><button class="lin-x" onclick="facDelExtra(\''+fac.uid+'\',\''+e.id+'\')" title="Quitar esta línea">✕</button></td>'+
         '<td style="font-weight:700;color:#1d4ed8">'+doc+(nc?'-5-':'-')+fac.consecutivoSiigo+'</td>'+
         '<td>'+esc(fac.numFacRaw)+'</td><td>'+esc(fac.fecha)+'</td>'+
         '<td style="font-size:11px">'+provDisplay+'</td>'+
@@ -2854,13 +2897,13 @@ function renderFacReview(){
         '<td style="font-size:11px"><span class="val-ed" ondblclick="facEdit(this,\''+fac.uid+'\',\'xdesc\',\''+e.id+'\')" title="Doble clic para editar la descripción">'+esc(e.desc)+'</span> <span style="font-size:9px;font-weight:700;color:#1d4ed8;border:1px solid #b2ccff;border-radius:8px;padding:0 5px">línea agregada</span></td>'+
         '<td style="font-weight:700"><span onclick="facToggleDC(\''+fac.uid+'\',\''+e.id+'\')" title="Clic para cambiar entre Débito y Crédito" style="cursor:pointer;border-bottom:1px dashed #98a2b3">'+e.dc+'</span></td>'+
         '<td style="text-align:right;font-size:11px"><span class="val-ed" ondblclick="facEdit(this,\''+fac.uid+'\',\'xval\',\''+e.id+'\')" title="Doble clic para escribir el valor">'+(e.valor>0?fmt(e.valor):'<span style="color:#b42318">$ 0 — doble clic</span>')+'</span></td>'+
-        '<td><button onclick="facDelExtra(\''+fac.uid+'\',\''+e.id+'\')" title="Quitar esta línea" style="font-size:11px;border:none;background:transparent;cursor:pointer;color:#b42318">✕ Quitar</button></td>'+
+        '<td></td>'+
       '</tr>';
     }
     // Fila pasivo
     const descPas=esc(nc?construirDescPasivoNC(fac.nombreProv,fac.nitProv,fac.nota,fac.numBL,contNum):construirDescPasivo(fac.nombreProv,fac.nitProv,fac.nota,fac.numBL,contNum));
     html+='<tr style="background:#ffffff">'+
-      '<td></td>'+
+      '<td class="lin-act"><button class="lin-x lin-a" onclick="facAddLinea(\''+fac.uid+'\')" title="Agregar una línea al registro contable">＋</button></td>'+
       '<td style="font-weight:700;color:#1d4ed8">'+doc+(nc?'-5-':'-')+fac.consecutivoSiigo+'</td>'+
       '<td>'+esc(fac.numFacRaw)+'</td><td>'+esc(fac.fecha)+'</td>'+
       '<td style="font-size:11px">'+provDisplay+'</td>'+
@@ -2911,7 +2954,7 @@ function facExportar(){
   if(CATALOGO){
     const usadas=new Set([CTA_PROVEEDOR]);
     todos.forEach(f=>{usadas.add(f.cuentaProv||CTA_PROVEEDOR);(f.extras||[]).forEach(e=>usadas.add(e.cuenta));});
-    todos.forEach(f=>Object.values(f.grupos).forEach(g=>{usadas.add(g.cuenta);if(g.cuentaIva&&!g.ivaEnCosto&&g.valorDebitoIva>0)usadas.add(g.cuentaIva);}));
+    todos.forEach(f=>Object.values(f.grupos).forEach(g=>{if(g.del)return;usadas.add(g.cuenta);if(g.cuentaIva&&!g.ivaEnCosto&&g.valorDebitoIva>0&&!g.ivaDel)usadas.add(g.cuentaIva);}));
     const fa=[...usadas].filter(c=>!CATALOGO.cuentas[c]);
     if(fa.length){facErrRev('Cuenta(s) que no existen en el catálogo de Siigo: '+fa.join(', ')+'. Corrígelas en Configuración → Cuentas por tipo de gasto y vuelve a procesar el lote.');return;}
   }
@@ -2926,12 +2969,13 @@ function facExportar(){
     let seq=1;
 
     for(const[,g] of Object.entries(fac.grupos)){
-      const descCosto=construirDescCosto(fac.nota,fac.numFacCorto,contNum,g.pref);
+      if(g.del)continue;
+      const descCosto=facDescLinea(fac,g,false);
       // Línea cuenta costo
       filasP.push(makeRowP(fac.consecutivoSiigo,g.cuenta,'D',g.valorDebitoCosto,anio,mes,dia,cc,nit,descCosto,seq++,0,null,null,null,null,null,null));
       // Línea IVA separada (si corresponde)
-      if(g.cuentaIva&&!g.ivaEnCosto&&g.valorDebitoIva>0){
-        const descIva=construirDescIva(fac.nota,fac.numFacCorto,contNum,g.pref);
+      if(g.cuentaIva&&!g.ivaEnCosto&&g.valorDebitoIva>0&&!g.ivaDel){
+        const descIva=facDescLinea(fac,g,true);
         filasP.push(makeRowP(fac.consecutivoSiigo,g.cuentaIva,'D',g.valorDebitoIva,anio,mes,dia,cc,nit,descIva,seq++,0,null,null,null,null,null,null));
       }
     }
@@ -2955,10 +2999,11 @@ function facExportar(){
     const [ra,rm,rd]=(/^\d{4}-\d{2}-\d{2}$/.test(fRef)?fRef:nc.fecha).split('-').map(Number);
     let seq=1;
     for(const[,g] of Object.entries(nc.grupos)){
-      const descCosto=('NC '+construirDescCosto(nc.nota,nc.numFacCorto,contNum,g.pref)).slice(0,40);
+      if(g.del)continue;
+      const descCosto=facDescLinea(nc,g,false);
       filasL.push(makeRowL(nc.consecutivoSiigo,g.cuenta,'C',g.valorDebitoCosto,anio,mes,dia,cc,nit,descCosto,seq++,0,null,null,null,null,null,null));
-      if(g.cuentaIva&&!g.ivaEnCosto&&g.valorDebitoIva>0){
-        const descIva=('NC '+construirDescIva(nc.nota,nc.numFacCorto,contNum,g.pref)).slice(0,40);
+      if(g.cuentaIva&&!g.ivaEnCosto&&g.valorDebitoIva>0&&!g.ivaDel){
+        const descIva=facDescLinea(nc,g,true);
         filasL.push(makeRowL(nc.consecutivoSiigo,g.cuentaIva,'C',g.valorDebitoIva,anio,mes,dia,cc,nit,descIva,seq++,0,null,null,null,null,null,null));
       }
     }

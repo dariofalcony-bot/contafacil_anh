@@ -123,6 +123,8 @@ tr.gmf-row td{background:#ffffff}
 .chip-f.on{background:#1d4ed8;border-color:#1d4ed8;color:#fff}.chip-f.on span{color:#dbe6fe}
 .btn-primary{padding:10px 22px;border:none;border-radius:8px;background:var(--ac);color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;font-family:inherit}
 .btn-primary:hover{background:var(--ach)}.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+  .cta-fila:hover{background:#eff4ff}
+  .cta-clic:hover{color:#1d4ed8}
 </style>
 </head>
 <body>
@@ -130,10 +132,11 @@ tr.gmf-row td{background:#ffffff}
   <div class="header">
     <div class="logo">CF</div>
     <div>
-      <h1>Contafacil ANH - FNHN <span id="app-version" style="font-size:12px;font-weight:400;color:#667085;cursor:pointer;border-bottom:1px dashed #cfd4dc" onclick="toggleChangelog()" title="Ver historial de cambios">v2.10.0</span></h1>
+      <h1>Contafacil ANH - FNHN <span id="app-version" style="font-size:12px;font-weight:400;color:#667085;cursor:pointer;border-bottom:1px dashed #cfd4dc" onclick="toggleChangelog()" title="Ver historial de cambios">v2.11.0</span></h1>
       <div class="sub">Extracto Bancario · Siigo · Conciliación 1:1, N:M, lotes ±4 días · Importación Contable Siigo</div>
       <div id="changelog-panel" style="display:none;position:absolute;top:70px;left:60px;background:#fff;border:1.5px solid #e4e7ec;border-radius:12px;padding:16px 20px;font-size:11px;color:#101828;line-height:1.9;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,.12);min-width:320px">
         <div style="font-weight:700;font-size:13px;margin-bottom:8px"> Historial de versiones</div>
+        <div><b>v2.11.0</b> — 2026-11-11: Buscador de cuenta del catálogo (por código o nombre) al hacer clic sobre la cuenta de cada línea; opción de recordarla en la regla del proveedor; se quita el selector de tipo. Asignación por municipio con respaldo desde la descripción del contrato.</div>
         <div><b>v2.10.0</b> — 2026-11-11: Contratos activos/inactivos con municipio o palabras clave; la asignación automática solo usa contratos activos (primero número de contrato, luego municipio) y avisa si la nota cita un contrato inactivo.</div>
         <div><b>v2.9.0</b> — 2026-11-11: Reglas por proveedor (contrato y tipo de gasto), tipo de gasto editable por factura, filtros y búsqueda, selección múltiple para asignar contrato, barra de exportar fija</div>
         <div><b>v2.8.0</b> — 2026-11-11: Historial de lotes exportados (avisa y excluye facturas ya contabilizadas) y consecutivos P / L-5 recordados entre sesiones</div>
@@ -430,6 +433,21 @@ tr.gmf-row td{background:#ffffff}
   </div>
 
   <!-- MODAL CONTRATO -->
+  <div id="cta-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1100;align-items:center;justify-content:center" onclick="if(event.target===this)ctaCerrar()">
+    <div style="background:#fff;border-radius:16px;padding:24px 28px;width:560px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(0,0,0,.18)">
+      <div style="font-size:16px;font-weight:700;color:#101828;margin-bottom:4px">Buscar cuenta en el catálogo</div>
+      <div id="cta-sub" style="font-size:12px;color:#667085;margin-bottom:12px"></div>
+      <input class="form-input" id="cta-q" placeholder="Código (ej: 6165150) o nombre (ej: alimentos)" oninput="ctaBuscar()" autocomplete="off">
+      <div id="cta-res" style="overflow:auto;margin-top:10px;min-height:120px;flex:1"></div>
+      <label style="display:flex;gap:8px;align-items:center;font-size:12px;margin-top:12px;cursor:pointer"><input type="checkbox" id="cta-recordar"> <span id="cta-rec-txt">Recordar para este proveedor</span></label>
+      <div style="display:flex;gap:10px;justify-content:space-between;margin-top:14px">
+        <button class="btn-sm" id="cta-rest" onclick="ctaRestaurar()" style="display:none">Volver a la cuenta automática</button>
+        <span></span>
+        <button class="btn-sm" onclick="ctaCerrar()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
   <div id="cfg-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center">
     <div style="background:#fff;border-radius:16px;padding:28px 32px;width:460px;max-width:95vw;box-shadow:0 16px 48px rgba(0,0,0,.18)">
       <div style="font-size:16px;font-weight:700;color:#101828;margin-bottom:20px" id="cfg-modal-title">Nuevo contrato</div>
@@ -1681,10 +1699,10 @@ function facRecordar(uid){
   const f=facFacturas.find(x=>x.uid===uid)||facNC.find(x=>x.uid===uid);if(!f)return;
   const n=regNit(f.nitProv);if(!n){toast('El documento no trae NIT de proveedor.');return;}
   const r=regLeer(),a=r[n]||{};
-  const nuevo={nombre:f.nombreProv||a.nombre||'',cc:a.cc||null,tipo:a.tipo||null,fecha:new Date().toISOString()};
+  const nuevo={nombre:f.nombreProv||a.nombre||'',cc:a.cc||null,tipo:a.tipo||null,fecha:new Date().toISOString()};if(a.ctas)nuevo.ctas=a.ctas;
   if(f.ccUser&&f.ccKey)nuevo.cc=f.ccKey;
   if((f.tipoUser||f.tipoRegla)&&f.tipoNota)nuevo.tipo=f.tipoNota;
-  if(!nuevo.cc&&!nuevo.tipo){toast('Primero asigna un contrato o un tipo de gasto a mano para poder recordarlo.');return;}
+  if(!nuevo.cc&&!nuevo.tipo&&!nuevo.ctas){toast('Primero asigna un contrato o un tipo de gasto a mano para poder recordarlo.');return;}
   r[n]=nuevo;
   if(!lsSet(REG_KEY,JSON.stringify(r))){toast(catAvisoLS(false));return;}
   toast('Regla guardada para '+(f.nombreProv||n)+(nuevo.cc?' · contrato '+nuevo.cc:'')+(nuevo.tipo?' · '+TIPOS_GASTO[nuevo.tipo]:''));
@@ -1701,18 +1719,83 @@ function regRender(){
   document.getElementById('reg-vacio').style.display=ks.length?'none':'block';
   document.getElementById('reg-tabla').style.display=ks.length?'table':'none';
   tb.innerHTML=ks.map(n=>{const x=r[n],c=x.cc&&FAC_CENTROS[x.cc];
-    return '<tr><td style="font-weight:600">'+esc(n)+'</td><td>'+esc(x.nombre||'')+'</td><td>'+(x.cc?esc(x.cc+' - '+(c?c.label:'(contrato no existe)')):'<span style="color:#98a2b3">—</span>')+'</td><td>'+(x.tipo?esc(TIPOS_GASTO[x.tipo]||x.tipo):'<span style="color:#98a2b3">—</span>')+'</td><td style="text-align:right"><button class="btn-sm" onclick="regQuitar(\''+n+'\')">Quitar</button></td></tr>';}).join('');
+    return '<tr><td style="font-weight:600">'+esc(n)+'</td><td>'+esc(x.nombre||'')+'</td><td>'+(x.cc?esc(x.cc+' - '+(c?c.label:'(contrato no existe)')):'<span style="color:#98a2b3">—</span>')+'</td><td>'+(x.tipo?esc(TIPOS_GASTO[x.tipo]||x.tipo):'<span style="color:#98a2b3">—</span>')+(x.ctas&&Object.keys(x.ctas).length?'<div style="font-size:10px;color:#667085">Cuentas: '+Object.values(x.ctas).map(esc).join(', ')+'</div>':'')+'</td><td style="text-align:right"><button class="btn-sm" onclick="regQuitar(\''+n+'\')">Quitar</button></td></tr>';}).join('');
+}
+// ── Buscador de cuenta (catálogo) por línea ──
+let _ctaCtx=null;
+function ctaAbrir(uid,gid){
+  const f=facFacturas.find(x=>x.uid===uid)||facNC.find(x=>x.uid===uid);if(!f||!f.grupos[gid])return;
+  _ctaCtx={uid,gid};
+  const g=f.grupos[gid];
+  document.getElementById('cta-sub').innerHTML='Factura <b>'+esc(f.numFacRaw)+'</b> · '+esc(g.pref)+' · cuenta actual <b>'+esc(g.cuenta)+'</b>'+(ctaNom(g.cuenta)?' '+esc(ctaNom(g.cuenta)):'');
+  document.getElementById('cta-q').value='';
+  document.getElementById('cta-recordar').checked=false;
+  document.getElementById('cta-rec-txt').textContent=f.nombreProv?('Recordar para '+nombreCorto(f.nombreProv,f.nitProv)+' (mismo tipo de gasto)'):'Recordar para este proveedor';
+  document.getElementById('cta-rest').style.display=g.cuentaMan?'inline-block':'none';
+  document.getElementById('cta-modal').style.display='flex';
+  ctaBuscar();
+  setTimeout(()=>document.getElementById('cta-q').focus(),30);
+}
+function ctaCerrar(){document.getElementById('cta-modal').style.display='none';_ctaCtx=null;}
+function ctaBuscar(){
+  const box=document.getElementById('cta-res');if(!box)return;
+  const q=document.getElementById('cta-q').value.trim(),ql=norm(q);
+  if(!CATALOGO){
+    const ok=/^\d{10}$/.test(q);
+    box.innerHTML='<div style="font-size:12px;color:#b54708;margin-bottom:8px">No hay catálogo cargado (Configuración → Catálogo de cuentas). Puedes escribir el código de 10 dígitos.</div>'+
+      (ok?'<button class="btn-sm btn-dl" onclick="ctaElegir(\''+q+'\')">Usar '+q+'</button>':'');
+    return;
+  }
+  const cs=CATALOGO.cuentas;
+  const res=Object.keys(cs).sort().filter(c=>/^\d{10}$/.test(c)&&(!q||c.startsWith(q)||norm(cs[c].n).includes(ql)));
+  box.innerHTML='<div style="font-size:11px;color:#667085;margin-bottom:4px">'+res.length+' resultado(s)'+(res.length>50?' (se muestran 50; escribe más para acotar)':'')+'</div>'+
+    (res.length?'<table style="width:100%"><tbody>'+res.slice(0,50).map(c=>'<tr class="cta-fila" style="cursor:pointer" onclick="ctaElegir(\''+c+'\')"><td style="font-weight:600;white-space:nowrap">'+c+'</td><td>'+esc(cs[c].n)+'</td></tr>').join('')+'</tbody></table>':'<div class="empty" style="padding:12px">Sin coincidencias.</div>');
+}
+function ctaElegir(code){
+  if(!_ctaCtx)return;
+  const f=facFacturas.find(x=>x.uid===_ctaCtx.uid)||facNC.find(x=>x.uid===_ctaCtx.uid);if(!f)return;
+  const gid=_ctaCtx.gid,rec=document.getElementById('cta-recordar').checked;
+  f.ctaMan=f.ctaMan||{};f.ctaMan[gid]=code;
+  let msg='Cuenta '+code+' aplicada a esa línea.';
+  if(rec){
+    const n=regNit(f.nitProv);
+    if(!n)msg+=' (sin NIT: no se pudo recordar)';
+    else{const r=regLeer(),a=r[n]||{nombre:f.nombreProv||'',cc:null,tipo:null};
+      a.ctas=Object.assign({},a.ctas||{},{[gid]:code});a.fecha=new Date().toISOString();if(!a.nombre)a.nombre=f.nombreProv||'';r[n]=a;
+      if(lsSet(REG_KEY,JSON.stringify(r))){msg+=' Guardada en la regla del proveedor.';regRender();}else msg+=' '+catAvisoLS(false);}
+  }
+  facAplicarCtas(f);ctaCerrar();
+  renderFacReview();if(_verUid)facVerRender();
+  toast(msg);
+}
+function ctaRestaurar(){
+  if(!_ctaCtx)return;
+  const f=facFacturas.find(x=>x.uid===_ctaCtx.uid)||facNC.find(x=>x.uid===_ctaCtx.uid);if(!f)return;
+  const gid=_ctaCtx.gid;
+  if(f.ctaMan)delete f.ctaMan[gid];
+  const r=regLeer(),n=regNit(f.nitProv);
+  if(r[n]&&r[n].ctas&&r[n].ctas[gid]&&document.getElementById('cta-recordar').checked){delete r[n].ctas[gid];lsSet(REG_KEY,JSON.stringify(r));regRender();}
+  f.grupos=agruparLineas(f.lineas,f.tipoNota);facAplicarCtas(f);
+  ctaCerrar();renderFacReview();if(_verUid)facVerRender();
+  toast('Cuenta automática restaurada.');
 }
 // tipo de gasto manual
 function facSetTipo(uid,tipo){
   const f=facFacturas.find(x=>x.uid===uid)||facNC.find(x=>x.uid===uid);if(!f)return;
   f.tipoUser=!!tipo;f.tipoRegla=false;
   f.tipoNota=tipo||detectarTipoNota(f.nota)||(esNC(f)?((facFacturas.find(o=>o.uid===f.origUid)||{}).tipoNota||null):null);
-  f.grupos=agruparLineas(f.lineas,f.tipoNota);
-  if(!esNC(f))facNC.filter(n=>n.origUid===f.uid&&!n.tipoUser).forEach(n=>{n.tipoNota=detectarTipoNota(n.nota)||f.tipoNota;n.grupos=agruparLineas(n.lineas,n.tipoNota);});
+  f.grupos=agruparLineas(f.lineas,f.tipoNota);facAplicarCtas(f);
+  if(!esNC(f))facNC.filter(n=>n.origUid===f.uid&&!n.tipoUser).forEach(n=>{n.tipoNota=detectarTipoNota(n.nota)||f.tipoNota;n.grupos=agruparLineas(n.lineas,n.tipoNota);facAplicarCtas(n);});
   renderFacReview();if(_verUid)facVerRender();
 }
 // ── Filtros ──
+function facAplicarCtas(f){
+  const rg=reglaDe(f.nitProv),rc=(rg&&rg.ctas)||{},um=f.ctaMan||{};
+  for(const g of Object.values(f.grupos)){
+    const c=um[g.gid]||rc[g.gid];
+    if(c&&/^\d{10}$/.test(c)){g.cuenta=c;g.cuentaMan=true;g.cuentaUsr=!!um[g.gid];g.cuentaRegla=!um[g.gid];g.duda=false;}
+  }
+}
 function facDuda(f){return Object.values(f.grupos).some(g=>g.duda||g.alertaIva);}
 const FAC_FILTROS=[
   ['todas','Todas',()=>true],
@@ -2347,7 +2430,7 @@ function facProcesar(){
         if(!fac.ccKey&&rg.cc&&FAC_CENTROS[rg.cc]&&FAC_CENTROS[rg.cc].activo!==false){fac.ccKey=rg.cc;fac.centroInfo=FAC_CENTROS[rg.cc];fac.ccRegla=true;}
         if(!fac.tipoNota&&rg.tipo){fac.tipoNota=rg.tipo;fac.tipoRegla=true;}
       }
-      fac.grupos=agruparLineas(fac.lineas,fac.tipoNota);
+      fac.grupos=agruparLineas(fac.lineas,fac.tipoNota);facAplicarCtas(fac);
       facFacturas.push(fac);
     }catch(e){
       if(e&&e.omitir)omitidos.push(arch.nombre);
@@ -2386,7 +2469,7 @@ function facProcesar(){
     nc.ccRegla=!(orig&&orig.ccKey)&&!detectarCCdesdNota(nc.nota)&&!!nc.ccKey;
     nc.centroInfo=nc.ccKey?FAC_CENTROS[nc.ccKey]:null;
     nc.tipoNota=detectarTipoNota(nc.nota)||(orig?orig.tipoNota:null)||rgn.tipo||null;
-    nc.grupos=agruparLineas(nc.lineas,nc.tipoNota);
+    nc.grupos=agruparLineas(nc.lineas,nc.tipoNota);facAplicarCtas(nc);
   }
   facNC.sort(ordenar);
   facNC.forEach((n,i)=>n.consecutivoSiigo=consecL+i);
@@ -2625,7 +2708,7 @@ function renderFacReview(){
       ' <strong>'+esc(fac.numFacRaw)+'</strong> &nbsp;|&nbsp; '+esc(fac.fecha)+' &nbsp;|&nbsp; '+
       esc((fac.nombreProv||'').slice(0,30))+' &nbsp;|&nbsp; Total: <strong>'+fmt(fac.totalPagar)+'</strong>'+
       ' &nbsp;|&nbsp; '+cuadreBadge+
-      ' &nbsp;|&nbsp; '+ccBadge+tipoSel+
+      ' &nbsp;|&nbsp; '+ccBadge+
       (fac.nota?' &nbsp;|&nbsp; <em style="font-size:10px;color:#667085">'+esc(fac.nota.slice(0,60))+'</em>':'')+
       (!cu.ok&&cu.pistas.length?'<div style="font-size:11px;font-weight:400;color:#b42318;margin-top:4px">Posible causa: '+esc(cu.pistas.join(' · '))+'</div>':'')+
       '</td></tr>';
@@ -2638,7 +2721,7 @@ function renderFacReview(){
         '<td style="font-weight:700;color:#1d4ed8">'+doc+(nc?'-5-':'-')+fac.consecutivoSiigo+'</td>'+
         '<td>'+esc(fac.numFacRaw)+'</td><td>'+esc(fac.fecha)+'</td>'+
         '<td style="font-size:11px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+provDisplay+'</td>'+
-        '<td style="font-weight:600;font-size:11px">'+g.cuenta+(ctaNom(g.cuenta)?'<div style="font-weight:400;font-size:10px;color:#667085;max-width:150px">'+esc(ctaNom(g.cuenta))+'</div>':'')+(g.cuentaIva&&!g.ivaEnCosto?'<span style="color:#b54708;display:block">'+g.cuentaIva+'</span>'+(ctaNom(g.cuentaIva)?'<div style="font-weight:400;font-size:10px;color:#b54708;max-width:150px">'+esc(ctaNom(g.cuentaIva))+'</div>':''):'')+'</td>'+
+        '<td style="font-weight:600;font-size:11px"><span class="cta-clic" onclick="ctaAbrir(\''+fac.uid+'\',\''+g.gid+'\')" title="Clic para buscar otra cuenta en el catálogo" style="cursor:pointer;border-bottom:1px dashed #98a2b3">'+g.cuenta+'</span>'+(g.cuentaMan?' <span style="font-size:9px;font-weight:700;color:#1d4ed8;border:1px solid #b2ccff;border-radius:8px;padding:0 5px">'+(g.cuentaRegla&&!g.cuentaUsr?'regla':'manual')+'</span>':'')+(ctaNom(g.cuenta)?'<div style="font-weight:400;font-size:10px;color:#667085;max-width:150px">'+esc(ctaNom(g.cuenta))+'</div>':'')+(g.cuentaIva&&!g.ivaEnCosto?'<span style="color:#b54708;display:block">'+g.cuentaIva+'</span>'+(ctaNom(g.cuentaIva)?'<div style="font-weight:400;font-size:10px;color:#b54708;max-width:150px">'+esc(ctaNom(g.cuentaIva))+'</div>':''):'')+'</td>'+
         '<td style="font-size:11px">'+descCosto+
           (descIva?'<br><span style="color:#b54708">'+descIva+'</span>':'')+
           (g.duda?' <span style="color:#b54708" title="Sin nota ni palabra clave: se asumió ALIMENTOS">⚠ por defecto</span>':'')+

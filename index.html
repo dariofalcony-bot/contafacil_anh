@@ -594,7 +594,7 @@ function cfgRenderTabla(){
     <tr>
       <td style="font-weight:700">${esc(c.cc)}</td>
       <td>${esc(c.cont)||'—'}</td>
-      <td${c.activo===false?' style="color:#98a2b3"':''}>${esc(c.label)}${c.palabras?'<div style="font-size:10px;color:#98a2b3">Municipio/palabras: '+esc(c.palabras)+'</div>':''}</td>
+      <td${c.activo===false?' style="color:#98a2b3"':''}>${esc(c.label)}${c.palabras?'<div style="font-size:10px;color:#98a2b3">Municipio/palabras: '+esc(c.palabras)+'</div>':((c.activo!==false&&c.tipo!=='adm')?'<div style="font-size:10px;color:#b54708">Sin municipio/palabras: edítalo para que asigne por municipio</div>':'')}</td>
       <td style="font-family:monospace">${esc(c.cuenta)}</td>
       <td>${tipos[c.tipo]||tipos.normal}</td>
       <td>${c.activo===false?'<span class="badge" style="background:#fff;color:#667085;border:1px solid #d0d5dd">Inactivo</span>':'<span class="badge badge-green">Activo</span>'}</td>
@@ -1777,13 +1777,18 @@ function ccNumero(c){
   const m=/^\d{3,4}$/.test((c.cont||'').trim())?c.cont.trim():((String(c.label||'').match(/\d{3,4}/)||[])[0]||'');
   return m;
 }
+const CC_STOP=['contrato','cont','administrativo','cuenta','bancaria','hcb','cdi','fami','modalidad','centro','desarrollo','infantil'];
+function ccPalabrasDeLabel(label){
+  return norm(String(label||'').replace(/[-_/]/g,' ')).split(/[^a-z0-9]+/).filter(w=>w.length>=5&&!/\d/.test(w)&&!CC_STOP.includes(w));
+}
 function ccKwReconstruir(lista){
   CC_KW.length=0;CC_INACT=[];_ccKwListo=true;
   lista.forEach(c=>{
     if(c.tipo==='adm')return;
     const num=ccNumero(c);
     if(c.activo===false){ if(num)CC_INACT.push({cc:c.cc,num}); return; }
-    const kw=String(c.palabras||'').split(',').map(x=>x.trim()).filter(Boolean);
+    let kw=String(c.palabras||'').split(',').map(x=>x.trim()).filter(Boolean);
+    if(!kw.length) kw=ccPalabrasDeLabel(c.label);   // sin palabras: usa el municipio escrito en la descripción
     CC_KW.push({cc:c.cc,num,kw});
   });
 }

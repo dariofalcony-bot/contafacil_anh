@@ -127,10 +127,11 @@ tr.gmf-row td{background:#ffffff}
   <div class="header">
     <div class="logo">CF</div>
     <div>
-      <h1>Contafacil ANH - FNHN <span id="app-version" style="font-size:12px;font-weight:400;color:#667085;cursor:pointer;border-bottom:1px dashed #cfd4dc" onclick="toggleChangelog()" title="Ver historial de cambios">v2.6.0</span></h1>
+      <h1>Contafacil ANH - FNHN <span id="app-version" style="font-size:12px;font-weight:400;color:#667085;cursor:pointer;border-bottom:1px dashed #cfd4dc" onclick="toggleChangelog()" title="Ver historial de cambios">v2.7.0</span></h1>
       <div class="sub">Extracto Bancario · Siigo · Conciliación 1:1, N:M, lotes ±4 días · Importación Contable Siigo</div>
       <div id="changelog-panel" style="display:none;position:absolute;top:70px;left:60px;background:#fff;border:1.5px solid #e4e7ec;border-radius:12px;padding:16px 20px;font-size:11px;color:#101828;line-height:1.9;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,.12);min-width:320px">
         <div style="font-weight:700;font-size:13px;margin-bottom:8px"> Historial de versiones</div>
+        <div><b>v2.7.0</b> — 2026-11-11: Vista previa de cada factura (PDF del ZIP + detalle del XML) con asignación de contrato desde la vista</div>
         <div><b>v2.6.0</b> — 2026-11-10: Nueva apariencia (paleta neutra, un solo color de acento, cabeceras claras), Contabilizar facturas como página principal, se retiró el centro BCS FNHN y la cuenta 5115200500 (no pertenecen a la Asociación)</div>
         <div><b>v2.5.0</b> — 2026-11-10: Catálogo de cuentas dinámico (cargar/actualizar el xlsx de Siigo con resumen de cambios), cuentas por tipo de gasto editables y validadas, respaldo JSON, SheetJS incrustado (funciona sin internet)</div>
         <div><b>v2.4.0</b> — 2026-11-10: Notas crédito de proveedor como comprobante L-5 (espejo del Doc P, cruzadas con la factura original, consecutivo propio, archivo aparte)</div>
@@ -372,6 +373,20 @@ tr.gmf-row td{background:#ffffff}
       <label class="btn-sm" style="cursor:pointer"> Restaurar respaldo<input type="file" accept=".json,application/json" style="display:none" onchange="bkImportar(this)"></label>
     </div>
     <div id="bk-err" style="display:none;background:#ffffff;border:1px solid #fecdca;border-radius:8px;padding:9px 12px;font-size:12px;color:#b42318;margin-bottom:10px"></div>
+  </div>
+
+
+  <!-- MODAL VISTA PREVIA FACTURA -->
+  <div id="ver-modal" style="display:none;position:fixed;inset:0;background:rgba(16,24,40,.55);z-index:1100;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)facVerCerrar()">
+    <div style="background:#fff;border-radius:14px;width:1100px;max-width:100%;height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.25)">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid #e4e7ec">
+        <div id="ver-titulo" style="font-size:14px;font-weight:700"></div>
+        <button class="btn-sm" onclick="facVerCerrar()">Cerrar ✕</button>
+      </div>
+      <div id="ver-tabs" class="tabs" style="align-items:center"></div>
+      <div id="ver-body" style="flex:1;overflow:auto;min-height:0"></div>
+      <div id="ver-pie" style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-top:1px solid #e4e7ec;flex-wrap:wrap"></div>
+    </div>
   </div>
 
   <!-- MODAL CATÁLOGO -->
@@ -1437,6 +1452,79 @@ function bkImportar(input){
 document.addEventListener('DOMContentLoaded',()=>{catCargarLS();mapAplicar();catRefrescarTodo();});
 
 
+// ── Vista previa ──
+// ═══ VISTA PREVIA DE FACTURA (PDF del ZIP + detalle del XML) ═══
+let _verUrl=null,_verUid=null,_verTab='pdf',_verPdf=0;
+function facOptsCC(sel){return Object.entries(FAC_CENTROS).map(([k,v])=>'<option value="'+esc(k)+'"'+(k===sel?' selected':'')+'>'+esc(k)+' - '+esc(v.label)+(v.contNum?' ('+esc(v.contNum)+')':'')+'</option>').join('');}
+function facPdfIdx(fac){
+  const p=fac.pdfs||[];if(!p.length)return -1;
+  const dig=(fac.numFacRaw||'').replace(/\D/g,'');
+  const i=dig?p.findIndex(x=>x.nombre.replace(/\D/g,'').includes(dig)):-1;
+  return i>=0?i:0;
+}
+function facVer(uid){
+  const fac=facFacturas.find(f=>f.uid===uid)||facNC.find(f=>f.uid===uid)||facNotas.find(f=>f.uid===uid);
+  if(!fac)return;
+  _verUid=uid;_verPdf=facPdfIdx(fac);_verTab=_verPdf>=0?'pdf':'det';
+  document.getElementById('ver-modal').style.display='flex';
+  facVerRender();
+}
+function facVerCerrar(){
+  document.getElementById('ver-modal').style.display='none';
+  document.getElementById('ver-body').innerHTML='';
+  if(_verUrl){URL.revokeObjectURL(_verUrl);_verUrl=null;}
+  _verUid=null;
+}
+function facVerTab(t){_verTab=t;facVerRender();}
+function facVerPdf(i){_verPdf=parseInt(i);facVerRender();}
+function facVerDetalle(fac){
+  const L=fac.lineas||[];
+  let sub=0,iva=0,otros=0;L.forEach(l=>{sub+=l.subtotal;iva+=l.ivaMonto;otros+=l.otros;});
+  const kv=(k,v)=>'<div><div style="font-size:10px;color:#667085;text-transform:uppercase;letter-spacing:.4px;font-weight:600">'+k+'</div><div style="font-size:13px;font-weight:600;word-break:break-word">'+(v||'—')+'</div></div>';
+  let h='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px">'+
+    kv('Proveedor',esc(fac.nombreProv))+kv('NIT proveedor',esc(fac.nitProv))+kv('Documento',esc(fac.numFacRaw)+' · '+({Invoice:'Factura',CreditNote:'Nota crédito',DebitNote:'Nota débito'}[fac.tipoDoc]||''))+kv('Fecha',esc(fac.fecha))+
+    kv('Receptor',esc(fac.nombreReceptor))+kv('NIT receptor',esc(fac.nitReceptor))+kv('Contrato detectado',fac.ccKey?esc(fac.ccKey+' - '+((FAC_CENTROS[fac.ccKey]||{}).label||'')):'<span style="color:#b42318">No identificado</span>')+kv('Total a pagar',fmt(fac.totalPagar))+'</div>';
+  h+='<div style="font-size:10px;color:#667085;text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:4px">Observación / notas del documento</div>'+
+    '<div style="border:1px solid #e4e7ec;border-radius:8px;padding:10px 12px;font-size:12px;white-space:pre-wrap;margin-bottom:16px;max-height:160px;overflow:auto">'+(fac.nota?esc(fac.nota):'<span style="color:#667085">Sin observación en el XML.</span>')+'</div>';
+  h+='<div style="font-size:10px;color:#667085;text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:4px">Ítems ('+L.length+')</div>'+
+    '<div style="border:1px solid #e4e7ec;border-radius:8px;overflow:auto"><table><thead><tr><th>Código</th><th>Descripción</th><th style="text-align:right">Cant.</th><th>Unidad</th><th style="text-align:right">V. unitario</th><th style="text-align:right">Subtotal</th><th style="text-align:right">IVA %</th><th style="text-align:right">IVA $</th></tr></thead><tbody>'+
+    L.map(l=>'<tr><td>'+esc(l.cod||'')+'</td><td>'+esc(l.desc)+'</td><td style="text-align:right">'+(l.cant!=null&&l.cant!==''?esc(String(l.cant)):'')+'</td><td>'+esc(l.unidad||'')+'</td><td style="text-align:right">'+(l.precio?fmt(l.precio):'')+'</td><td style="text-align:right">'+fmt(l.subtotal)+'</td><td style="text-align:right">'+l.ivaPct+'%</td><td style="text-align:right">'+fmt(l.ivaMonto)+'</td></tr>').join('')+
+    '</tbody></table></div>';
+  h+='<div style="display:flex;justify-content:flex-end;margin-top:14px"><table style="width:auto;min-width:300px"><tbody>'+
+    '<tr><td>Subtotal</td><td style="text-align:right">'+fmt(sub)+'</td></tr><tr><td>IVA</td><td style="text-align:right">'+fmt(iva)+'</td></tr>'+
+    (otros?'<tr><td>Otros impuestos</td><td style="text-align:right">'+fmt(otros)+'</td></tr>':'')+
+    (fac.descGlobal?'<tr><td>Descuentos</td><td style="text-align:right">-'+fmt(fac.descGlobal)+'</td></tr>':'')+
+    (fac.cargoGlobal?'<tr><td>Cargos</td><td style="text-align:right">'+fmt(fac.cargoGlobal)+'</td></tr>':'')+
+    '<tr><td style="font-weight:700">Total a pagar</td><td style="text-align:right;font-weight:700">'+fmt(fac.totalPagar)+'</td></tr></tbody></table></div>';
+  return h;
+}
+function facVerRender(){
+  const fac=facFacturas.find(f=>f.uid===_verUid)||facNC.find(f=>f.uid===_verUid)||facNotas.find(f=>f.uid===_verUid);
+  if(!fac){facVerCerrar();return;}
+  const pdfs=fac.pdfs||[],hayPdf=pdfs.length>0;
+  document.getElementById('ver-titulo').innerHTML=esc(fac.numFacRaw)+' · '+esc((fac.nombreProv||'').slice(0,45))+' · <span style="font-weight:400;color:#667085">'+esc(fac.fecha)+'</span>';
+  const tab=(id,txt)=>'<button class="tab'+(_verTab===id?' on':'')+'" onclick="facVerTab(\''+id+'\')">'+txt+'</button>';
+  document.getElementById('ver-tabs').innerHTML=tab('pdf','Documento (PDF)')+tab('det','Detalle del XML')+
+    (hayPdf&&_verTab==='pdf'&&pdfs.length>1?'<select class="form-select" style="margin:4px 8px;padding:4px 8px;font-size:12px" onchange="facVerPdf(this.value)">'+pdfs.map((p,i)=>'<option value="'+i+'"'+(i===_verPdf?' selected':'')+'>'+esc(p.nombre)+'</option>').join('')+'</select>':'')+
+    (hayPdf&&_verTab==='pdf'?'<a class="btn-sm" id="ver-nueva" target="_blank" rel="noopener" style="margin:4px 8px 4px auto;align-self:center">Abrir en pestaña nueva</a>':'');
+  const body=document.getElementById('ver-body');
+  if(_verUrl){URL.revokeObjectURL(_verUrl);_verUrl=null;}
+  if(_verTab==='pdf'){
+    if(!hayPdf){body.innerHTML='<div class="empty">Este documento no trae PDF.<br><span style="font-size:12px">Los PDF vienen dentro del ZIP que descargas del correo o de la DIAN. Si cargaste el XML suelto, carga el ZIP completo para verlo. Mientras tanto, mira la pestaña "Detalle del XML".</span></div>';}
+    else{
+      _verUrl=URL.createObjectURL(new Blob([pdfs[_verPdf].datos],{type:'application/pdf'}));
+      body.innerHTML='<iframe title="Representación gráfica" src="'+_verUrl+'" style="width:100%;height:100%;border:0;display:block"></iframe>';
+      const a=document.getElementById('ver-nueva');if(a)a.href=_verUrl;
+    }
+    body.style.padding='0';
+  }else{body.style.padding='20px 24px';body.innerHTML=facVerDetalle(fac);}
+  const esN=fac.tipoDoc==='DebitNote';
+  document.getElementById('ver-pie').innerHTML=esN?'<span style="color:#667085;font-size:12px">Nota débito: no genera asiento en este módulo.</span>':
+    '<label class="form-label" style="margin:0">Contrato</label><select class="form-select" style="min-width:300px" onchange="facSetCC(\''+fac.uid+'\',this.value);facVerRender()"><option value="">-- Contrato --</option>'+facOptsCC(fac.ccKey)+'</select>'+(esNC(fac)&&fac.origUid?'<span style="font-size:11px;color:#667085">Hereda el de su factura original salvo que lo cambies aquí.</span>':'');
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&_verUid)facVerCerrar();});
+
+
 // ── Centros de costo ──
 const FAC_CENTROS = {
   '1': {cc:1,  contNum:'',    label:'Administrativo'},
@@ -1718,7 +1806,15 @@ function parsearXMLFac(xmlText){
       }else otros+=monto;                           // INC, bolsas, ICA, etc.
     }
     otrosImpuestos+=otros;
-    lineas.push({desc:descItem,subtotal,ivaPct,ivaMonto,otros});
+    let cant='',unidad='';
+    for(const tq of ['InvoicedQuantity','CreditedQuantity','DebitedQuantity']){
+      const qe=line.getElementsByTagNameNS(NS_CBC,tq)[0];
+      if(qe){cant=parseFloat(qe.textContent)||0;unidad=qe.getAttribute('unitCode')||'';break;}
+    }
+    const pr=line.getElementsByTagNameNS(NS_CAC,'Price')[0];
+    const precio=pr?(parseFloat(qt(pr,'PriceAmount')||'0')||0):0;
+    const si=itemEl?itemEl.getElementsByTagNameNS(NS_CAC,'SellersItemIdentification')[0]:null;
+    lineas.push({desc:descItem,subtotal,ivaPct,ivaMonto,otros,cant,unidad,precio,cod:si?(qt(si,'ID')||''):''});
   }
   return{tipoDoc,cufe,refNum,refFecha,refCufe,numFacRaw,numBL:extraerNumBL(numFacRaw),numFacCorto:(numFacRaw.replace(/\D/g,'')||numFacRaw),fecha,nota,nitProv,nombreProv,totalPagar,descGlobal,cargoGlobal,anticipo,otrosImpuestos,lineas,nitReceptor,nombreReceptor,alertaNit,alertaNombre};
 }
@@ -1881,7 +1977,7 @@ async function facCargarArchivos(files){
           else{facArchivos.push(x);claves.add(k);nuevos++;}
         }
         repetidos+=dups;
-        addItem(' ',file.name,dups>0?'status-warn':'status-ok',nuevos+' XML(s) ✓'+(dups>0?' · <b>'+dups+' repetido(s) omitido(s)</b>':''));
+        addItem(' ',file.name,dups>0?'status-warn':'status-ok',nuevos+' XML(s)'+(xmls[0]&&xmls[0].pdfs.length?' · '+xmls[0].pdfs.length+' PDF':'')+' ✓'+(dups>0?' · <b>'+dups+' repetido(s) omitido(s)</b>':''));
       }catch(e){addItem(' ',file.name,'status-err','Error: '+esc(e.message));}
     }else{
       addItem('⚠',file.name,'status-err','Formato no válido');
@@ -1902,11 +1998,13 @@ async function extraerXMLsDeZip(ab){
   // Lectura con fflate (usa el directorio central del ZIP: funciona aunque el ZIP se haya creado en modo streaming)
   let archivos;
   try{
-    archivos=fflate.unzipSync(new Uint8Array(ab),{filter:f=>f.name.toLowerCase().endsWith('.xml')});
+    archivos=fflate.unzipSync(new Uint8Array(ab),{filter:f=>/\.(xml|pdf)$/i.test(f.name)});
   }catch(e){throw new Error('ZIP dañado o no legible ('+(e&&e.message?e.message:e)+')');}
-  const xmls=[];
+  const xmls=[],pdfs=[];
   for(const [ruta,datos] of Object.entries(archivos)){
-    xmls.push({nombre:ruta.split('/').pop(),xml:new TextDecoder('utf-8').decode(datos)});
+    const nombre=ruta.split('/').pop();
+    if(/\.pdf$/i.test(nombre))pdfs.push({nombre,datos});
+    else xmls.push({nombre,xml:new TextDecoder('utf-8').decode(datos),pdfs});
   }
   if(!xmls.length)throw new Error('No se encontró ningún XML dentro del ZIP.');
   return xmls;
@@ -1969,7 +2067,7 @@ function facProcesar(){
       if(vistos.has(kNum)||(kCufe&&vistos.has(kCufe))){duplicados.push((nitDig?nitDig+' · ':'')+(fac.numFacRaw||arch.nombre));continue;}
       vistos.add(kNum);if(kCufe)vistos.add(kCufe);
       fac.uid='f'+(++_facUid);
-      fac.archivo=arch.nombre;
+      fac.archivo=arch.nombre;fac.pdfs=arch.pdfs||[];
       if(fac.tipoDoc==='DebitNote'){facNotas.push(fac);continue;}  // notas débito: se muestran aparte, sin asiento
       fac.consecutivoSiigo=0;
       fac.alertaFecha=false;
@@ -2219,6 +2317,7 @@ function renderFacReview(){
         '<option value="">-- Nuevo contrato --</option>'+optsCC(fac.ccKey)+
         '</select>';
 
+    const verBtn='<button onclick="facVer(\''+fac.uid+'\')" title="Ver el PDF y el detalle de este documento" style="float:right;font-size:11px;font-weight:600;border:1px solid #d0d5dd;background:#fff;cursor:pointer;color:#1d4ed8;padding:1px 9px;border-radius:6px;margin-left:6px">Ver</button>';
     const elimBtn='<button onclick="facEliminar(\''+fac.uid+'\')" title="Eliminar esta factura del lote" '+
       'style="float:right;font-size:11px;border:none;background:transparent;cursor:pointer;color:#b42318;'+
       'padding:1px 5px;border-radius:4px" onmouseover="this.style.background=\'#ffffff\'" '+
@@ -2233,7 +2332,7 @@ function renderFacReview(){
       ?'<span style="background:#f2f4f7;color:#475467;border-radius:4px;padding:1px 7px;font-size:10px;font-weight:700;margin-right:6px">↩ NOTA CRÉDITO · afecta FAC '+esc(fac.refNum)+(orig?' (en el lote)':' (fuera del lote)')+'</span>'
       :'<span style="background:#b42318;color:#fff;border-radius:4px;padding:2px 8px;font-size:10px;font-weight:700;margin-right:6px">✕ NOTA CRÉDITO SIN FACTURA ORIGINAL</span>'):'';
     html+='<tr class="fac-group-header"><td colspan="10" style="'+(sinCCfac?'border-left:3px solid #b42318':fac.alertaFecha?'background:#ffffff;border-left:4px solid #f79009':fac.alertaNit?'background:#ffffff;border-left:4px solid #b42318':nc?'border-left:3px solid #98a2b3':'')+'">'+
-      elimBtn+refBadge+
+      elimBtn+verBtn+refBadge+
       (fac.alertaNit
         ?'<span style="background:#b42318;color:#fff;border-radius:4px;padding:2px 8px;font-size:10px;font-weight:700;margin-right:6px">✕ NIT RECEPTOR INCORRECTO: '+esc(fac.nitReceptor)+' — No corresponde a AUPHCB ni FNHN</span>'
         : fac.alertaNombre
